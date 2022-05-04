@@ -66,19 +66,44 @@ function setup() {
       svgMode = true
       print("Loaded with URL Mode: SVG")
    }
+   if (params.wave === "true" || params.wave === "1") {
+      waveMode = true
+      print("Loaded with URL Mode: Wave")
+   }
+   if (params.xray === "true" || params.xray === "1") {
+      debugGridMode = true
+      print("Loaded with URL Mode: XRAY")
+   }
+   if (params.center === "true" || params.center === "1") {
+      alignCenter = true
+      print("Loaded with URL Mode: Centered")
+   }
+   if (params.solid === "false" || params.solid === "0") {
+      drawFills = false
+      print("Loaded with URL Mode: Transparent overlaps")
+   }
    if (params.invert === "true" || params.invert === "1") {
       darkMode = false
       print("Loaded with URL Mode: Inverted")
    }
    if (params.text !== null && params.text.length > 0) {
-      linesArray = [params.text,""]
-      print("Loaded with URL Text")
+      const linesString = String(params.text)
+      const newLineArray = linesString.split('_')
+
+      if (newLineArray.length === 2) {
+         linesArray = newLineArray
+         currentLine = linesArray.length -1
+         print("Loaded with URL Text")
+      } else {
+         print("Has to be 2 lines of text with _ in between")
+      }
+      
    }
    if (params.values !== null && params.values.length > 0) {
       const valString = String(params.values)
-      const valArray = valString.split(',')
+      const valArray = valString.split('_')
 
-      if (valString.match("[0-9,-]+") && valArray.length === 9) {
+      if (valString.match("[0-9_-]+") && valArray.length === 9) {
          print("Loaded with parameters", valArray)
          values.size.from = parseInt(valArray[0])
          values.rings.from = parseInt(valArray[1])
@@ -90,7 +115,7 @@ function setup() {
          values.weight.from = parseInt(valArray[7])
          values.gradient.from = parseInt(valArray[8])
       } else {
-         print("Has to be 9 negative or positive numbers with commas in between")
+         print("Has to be 9 negative or positive numbers with _ in between")
       }
    }
 
@@ -104,10 +129,72 @@ function setup() {
    values.colorLight.from = color("#C4B6FF")
 }
 
-function keyPressed() {
+function writeParamsToURL() {
+   let URL = String(window.location.href)
+   if (URL.includes("?")) {
+      URL = URL.split("?",1)
+   }
 
+   const newParams = new URLSearchParams();
+
+   // add all setting parameters if any of them are not default
+   if (true) { //WIP needs better condition lol
+      function getValue(key) {
+         if (values[key].to === undefined) {
+            return values[key].from
+         } else {
+            return values[key].to
+         }
+      }
+      let valueArr = []
+      valueArr.push(getValue("size"))
+      valueArr.push(getValue("rings"))
+      valueArr.push(getValue("spacing"))
+      valueArr.push(getValue("offsetX"))
+      valueArr.push(getValue("offsetY"))
+      valueArr.push(getValue("stretchX"))
+      valueArr.push(getValue("stretchY"))
+      valueArr.push(getValue("weight"))
+      valueArr.push(getValue("gradient"))
+
+      newParams.append("values",valueArr.join("_"))
+   }
+
+   // add word parameter if it isn't the default word or has more lines
+   if (linesArray[0] !== "hamburgefonstiv" || currentLine > 0) {
+      newParams.append("text",linesArray.join("_"))
+   }
+
+   // add other parameters afterwards
+   if (svgMode) {
+      newParams.append("svg",true)
+   }
+   if (!darkMode) {
+      newParams.append("invert",true)
+   }
+   if (debugGridMode) {
+      newParams.append("xray",true)
+   }
+   if (waveMode) {
+      newParams.append("wave",true)
+   }
+   if (!drawFills) {
+      newParams.append("solid",false)
+   }
+   if (alignCenter) {
+      newParams.append("center",true)
+   }
+
+   if (URLSearchParams.toString(newParams).length > 0) {
+      URL += "?" + newParams
+   }
+   window.history.replaceState("", "", URL)
+}
+
+function keyTyped() {
    if (key === "2") {
-      darkMode = !darkMode;
+      darkMode = !darkMode
+      writeParamsToURL()
       draw()
       return
    }
@@ -149,34 +236,39 @@ function keyPressed() {
 
       values.colorDark.to = color('hsl('+floor(random(0,360))+', 100%, 06%)')
       values.colorLight.to = color('hsl('+floor(random(0,360))+', 100%, 90%)')
+      writeParamsToURL()
       draw()
       return
    }
    else if (key === "3") {
       //toggle print b/w mode
       printMode = !printMode
-      setup()
+      writeParamsToURL()
       draw()
       return
    }
    else if (key === "4") {
       //toggle debug mode
       debugGridMode = !debugGridMode
+      writeParamsToURL()
       draw()
       return
    }
    else if (key === "5") {
       waveMode = !waveMode
+      writeParamsToURL()
       draw()
       return
    }
    else if (key === "6") {
       drawFills = !drawFills
+      writeParamsToURL()
       draw()
       return
    }
    else if (key === "7") {
       alignCenter = !alignCenter
+      writeParamsToURL()
       draw()
       return
    }
@@ -191,15 +283,29 @@ function keyPressed() {
       values.stretchY.to = 0
       values.weight.to = 7
       values.gradient.to = 0
+      writeParamsToURL()
       draw()
       return
    }
    else if (key === "9") {
       linesArray = ["",""]
       currentLine = 0
+      writeParamsToURL()
       draw()
       return
    }
+
+   if (validLetters.includes(key)) {
+      linesArray[currentLine] += key;
+   } else {
+      //print(key + " can't be typed just yet!")
+   }
+   writeParamsToURL()
+   draw()
+}
+
+function keyPressed() {
+   
 
    if (keyCode === BACKSPACE) {
       if (currentLine > 0 && linesArray[currentLine].length === 0) {
@@ -207,6 +313,7 @@ function keyPressed() {
       } else {
          linesArray[currentLine] = linesArray[currentLine].slice(0, -1)
       }
+      writeParamsToURL()
       draw()
       return
    }
@@ -215,20 +322,22 @@ function keyPressed() {
       if (currentLine < 1) {
          currentLine++
       }
+      writeParamsToURL()
       draw()
       return
    }
-
 
    sliderChange = 0
    if (keyCode === LEFT_ARROW) {
       sliderChange = -1
       draw()
+      writeParamsToURL()
       return
    }
    else if (keyCode === RIGHT_ARROW) {
       sliderChange = 1
       draw()
+      writeParamsToURL()
       return
    }
    else if (keyCode === DOWN_ARROW) {
@@ -247,13 +356,6 @@ function keyPressed() {
       draw()
       return
    }
-
-   if (validLetters.includes(key)) {
-      linesArray[currentLine] += key;
-   } else {
-      print(key + " can't be typed just yet!")
-   }
-   draw()
 }
 
 function draw () {
@@ -509,7 +611,7 @@ function drawElements() {
    push()
    text("randomize    ", col4, 0); translate(0,2)
    text("invert color ", col4, 0); translate(0,2)
-   text("svg mode (test)", col4, 0); translate(0,2)
+   text("monochromatic", col4, 0); translate(0,2)
    text("xray mode    ", col4, 0); translate(0,2)
    text("wave mode (test)", col4, 0); translate(0,2)
    text("overlaps     ", col4, 0); translate(0,2)
