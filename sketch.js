@@ -7,7 +7,7 @@ let startOffsetY
 let bgColor
 let lineColor
 
-let darkMode = false
+let darkMode = true
 let printMode = false
 let debugGridMode = false
 let drawFills = true
@@ -62,14 +62,39 @@ function setup() {
    const params = new Proxy(new URLSearchParams(window.location.search), {
       get: (searchParams, prop) => searchParams.get(prop),
     });
-   let svgParam = (params.svg !== "true") ? false : true
-   svgMode = svgParam
-   print("svg? "+svgParam)
-   //if (svgMode) {
-   //   noLoop()
-   //}
+   if (params.svg === "true" || params.svg === "1") {
+      svgMode = true
+      print("Loaded with URL Mode: SVG")
+   }
+   if (params.invert === "true" || params.invert === "1") {
+      darkMode = false
+      print("Loaded with URL Mode: Inverted")
+   }
+   if (params.text !== null && params.text.length > 0) {
+      linesArray = [params.text,""]
+      print("Loaded with URL Text")
+   }
+   if (params.values !== null && params.values.length > 0) {
+      const valString = String(params.values)
+      const valArray = valString.split(',')
 
-   renderer = createCanvas(windowWidth-10, windowHeight-10,(svgParam)?SVG:"")
+      if (valString.match("[0-9,-]+") && valArray.length === 9) {
+         print("Loaded with parameters", valArray)
+         values.size.from = parseInt(valArray[0])
+         values.rings.from = parseInt(valArray[1])
+         values.spacing.from = parseInt(valArray[2])
+         values.offsetX.from = parseInt(valArray[3])
+         values.offsetY.from = parseInt(valArray[4])
+         values.stretchX.from = parseInt(valArray[5])
+         values.stretchY.from = parseInt(valArray[6])
+         values.weight.from = parseInt(valArray[7])
+         values.gradient.from = parseInt(valArray[8])
+      } else {
+         print("Has to be 9 negative or positive numbers with commas in between")
+      }
+   }
+
+   renderer = createCanvas(windowWidth-10, windowHeight-10,(svgMode)?SVG:"")
    strokeCap(ROUND)
    rectMode(CORNERS)
    textFont("Courier Mono")
@@ -1080,27 +1105,30 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             verticalOffset -= nextOffset
             break;
          case "x":
+            push()
+            if (isin(char,["gap","ur"]) && isin(char,["gap","dr"])) {
+               translate(-weight-1,0)
+            }
             // top connection
             verticalOffset += nextOffset
-            if (!isin(char,["gap"])) {
-               if (char === "x") {
-                  drawArc(ringSizes, 1, 1, nextSpacing, 0, "", "")
-               } else if (isin(char,["ur"]) || "l".includes(char)) {
+            if (!isin(char,["gap"]) && char !== "x") {
+               if (isin(char,["ur"]) || "l".includes(char)) {
                   drawArc(ringSizes, 1, 1, nextSpacing, 0, "sharp", "start")
                } else if (char !== "t"){
                   drawArc(ringSizes, 1, 1, nextSpacing, 0, "round", "start")
                }
             }
             // bottom connection
-            if (!"ef".includes(char)) {
+            if (!"xef".includes(char) && !isin(char,["gap"])) {
                if (char === "s") {
                   drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end", isFlipped)
                } else if (char === "r" || isin(char,["dr"])) {
                   drawArc(ringSizes, 4, 4, nextSpacing, 0, "sharp", "end", isFlipped)
-               } else if (!isin(char,["gap", "dr"])) {
+               } else {
                   drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end", isFlipped)
                }
             }
+            pop()
             verticalOffset -= nextOffset
             break;
          case "z":
@@ -1290,13 +1318,8 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
                translate(-weight-1,0)
             }
 
-            if (isin(prevchar,["gap", "ur"])) {
-               drawArcFill(2, 2, 0, 0)
-               drawArcFill(4, 3, wideOffset, 0)
-            } else {
-               drawArcFill(2, 2, 0, 0)
-               drawArcFill(4, 3, wideOffset, 0)
-            }
+            drawArcFill(2, 2, 0, 0)
+            drawArcFill(4, 3, wideOffset, 0)
 
             if (isin(prevchar, ["gap"])) {
                drawArc(ringSizes, 1, 1, 0, 0, "sharp", "start", undefined, true)
@@ -1304,14 +1327,12 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             drawArc(ringSizes, 2, 2, 0, 0, "", "")
             drawArc(ringSizes, 4, 3, wideOffset, 0, "", "")
 
-            if (!isin(nextchar,["dl", "gap"])) {
-               if (nextchar === "x") {
-                  drawArc(ringSizes, 3, 4, wideOffset, 0, "", "")
-               } else {
+            if (nextchar !== "x") {
+               if (!isin(nextchar,["dl", "gap"])) {
                   drawArc(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "round", "start")
+               } else {
+                  drawArc(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "sharp", "start", undefined, true)
                }
-            } else {
-               drawArc(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "sharp", "start", undefined, true)
             }
 
             // SECOND LAYER
@@ -1324,14 +1345,16 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             }
 
             drawArc(ringSizes, 1, 2, wideOffset, 0, "", "")
-            if (!isin(nextchar,["gap", "ul"])) {
-               drawArc(ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "round", "end")
-            } else {
-               drawArc(ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "sharp", "end", undefined, true)
+            if (nextchar !== "x") {
+               if (!isin(nextchar,["gap", "ul"])) {
+                  drawArc(ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "round", "end")
+               } else {
+                  drawArc(ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "sharp", "end", undefined, true)
+               }
             }
             drawArc(ringSizes, 3, 3, 0, 0, "", "")
             if (isin(prevchar,["gap"])) {
-               drawArc(ringSizes, 4, 4, 0, 0, "sharp", "end")
+               drawArc(ringSizes, 4, 4, 0, 0, "sharp", "end", undefined, true)
             }
             pop()
             break;
@@ -1768,7 +1791,7 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
       spaceBefore = -inner-weight-typeStretchX
       beforeConnect = true
    }
-   if ("ktlcrfs".includes(char) && nextchar === "x") {
+   if ("ktlcrfsx".includes(char) && nextchar === "x") {
       spaceBefore = -inner-weight-typeStretchX
       beforeConnect = true
    }
