@@ -86,18 +86,15 @@ function setup() {
       darkMode = false
       print("Loaded with URL Mode: Inverted")
    }
-   if (params.text !== null && params.text.length > 0) {
-      const linesString = String(params.text)
-      const newLineArray = linesString.split('_')
-
-      if (newLineArray.length === 2) {
-         linesArray = newLineArray
+   if (params.line1 !== null && params.line1.length > 0) {
+      if (params.line2 !== null && params.line2.length > 0) {
+         linesArray = [params.line1, params.line2]
          currentLine = linesArray.length -1
-         print("Loaded with URL Text")
       } else {
-         print("Has to be 2 lines of text with _ in between")
+         linesArray = [params.line1, ""]
+         currentLine = 0
       }
-      
+      print("Loaded with URL Text")
    }
    if (params.values !== null && params.values.length > 0) {
       const valString = String(params.values)
@@ -162,7 +159,10 @@ function writeParamsToURL() {
 
    // add word parameter if it isn't the default word or has more lines
    if (linesArray[0] !== "hamburgefonstiv" || currentLine > 0) {
-      newParams.append("text",linesArray.join("_"))
+      newParams.append("line1",linesArray[0])
+   }
+   if (currentLine > 0) {
+      newParams.append("line2",linesArray[1])
    }
 
    // add other parameters afterwards
@@ -194,8 +194,8 @@ function writeParamsToURL() {
 function keyTyped() {
    if (key === "2") {
       darkMode = !darkMode
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "1") {
@@ -236,40 +236,40 @@ function keyTyped() {
 
       values.colorDark.to = color('hsl('+floor(random(0,360))+', 100%, 06%)')
       values.colorLight.to = color('hsl('+floor(random(0,360))+', 100%, 90%)')
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "3") {
       //toggle print b/w mode
       printMode = !printMode
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "4") {
       //toggle debug mode
       debugGridMode = !debugGridMode
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "5") {
       waveMode = !waveMode
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "6") {
       drawFills = !drawFills
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "7") {
       alignCenter = !alignCenter
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "8") {
@@ -283,25 +283,23 @@ function keyTyped() {
       values.stretchY.to = 0
       values.weight.to = 7
       values.gradient.to = 0
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
    else if (key === "9") {
       linesArray = ["",""]
       currentLine = 0
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
 
    if (validLetters.includes(key)) {
       linesArray[currentLine] += key;
-   } else {
-      //print(key + " can't be typed just yet!")
+      draw()
+      writeParamsToURL()
    }
-   writeParamsToURL()
-   draw()
 }
 
 function keyPressed() {
@@ -313,8 +311,8 @@ function keyPressed() {
       } else {
          linesArray[currentLine] = linesArray[currentLine].slice(0, -1)
       }
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
 
@@ -322,8 +320,8 @@ function keyPressed() {
       if (currentLine < 1) {
          currentLine++
       }
-      writeParamsToURL()
       draw()
+      writeParamsToURL()
       return
    }
 
@@ -359,8 +357,9 @@ function keyPressed() {
 }
 
 function draw () {
-   clear()
-   //renderer.drawingContext.__clearCanvas();
+   if (svgMode) {
+      clear()
+   }
 
    // translate left/right arrow use to correct "to" value
 
@@ -1786,6 +1785,10 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
 
    // 1 less space after letters with cutoff
    if ("ktlcrfsx".includes(char) && isin(nextchar,["gap"])) {
+      charWidth -= 1
+   }
+   // 1 less space in front of xzy
+   if ("xsz".includes(nextchar) && isin(char,["gap"])) {
       charWidth -= 1
    }
 
