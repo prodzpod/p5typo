@@ -87,7 +87,7 @@ function setup() {
       print("Loaded with URL Mode: Inverted")
    }
    if (params.line1 !== null && params.line1.length > 0) {
-      if (params.line2 !== null && params.line2.length > 0) {
+      if (params.line2 !== null) {
          linesArray = [params.line1, params.line2]
          currentLine = linesArray.length -1
       } else {
@@ -194,7 +194,7 @@ function writeParamsToURL() {
 function keyTyped() {
    if (key === "2") {
       darkMode = !darkMode
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
@@ -236,39 +236,39 @@ function keyTyped() {
 
       values.colorDark.to = color('hsl('+floor(random(0,360))+', 100%, 06%)')
       values.colorLight.to = color('hsl('+floor(random(0,360))+', 100%, 90%)')
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
    else if (key === "3") {
       //toggle print b/w mode
       printMode = !printMode
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
    else if (key === "4") {
       //toggle debug mode
       debugGridMode = !debugGridMode
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
    else if (key === "5") {
       waveMode = !waveMode
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
    else if (key === "6") {
       drawFills = !drawFills
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
    else if (key === "7") {
       alignCenter = !alignCenter
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
@@ -283,21 +283,21 @@ function keyTyped() {
       values.stretchY.to = 0
       values.weight.to = 7
       values.gradient.to = 0
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
    else if (key === "9") {
       linesArray = ["",""]
       currentLine = 0
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
 
    if (validLetters.includes(key)) {
       linesArray[currentLine] += key;
-      draw()
+      //draw()
       writeParamsToURL()
    }
 }
@@ -311,7 +311,7 @@ function keyPressed() {
       } else {
          linesArray[currentLine] = linesArray[currentLine].slice(0, -1)
       }
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
@@ -320,7 +320,7 @@ function keyPressed() {
       if (currentLine < 1) {
          currentLine++
       }
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
@@ -328,13 +328,13 @@ function keyPressed() {
    sliderChange = 0
    if (keyCode === LEFT_ARROW) {
       sliderChange = -1
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
    else if (keyCode === RIGHT_ARROW) {
       sliderChange = 1
-      draw()
+      //draw()
       writeParamsToURL()
       return
    }
@@ -343,7 +343,7 @@ function keyPressed() {
       if (sliderMode >= sliderModes.length) {
          sliderMode = 0
       }
-      draw()
+      //draw()
       return
    }
    else if (keyCode === UP_ARROW) {
@@ -351,7 +351,7 @@ function keyPressed() {
       if (sliderMode < 0) {
          sliderMode = sliderModes.length-1
       }
-      draw()
+      //draw()
       return
    }
 }
