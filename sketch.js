@@ -1,5 +1,6 @@
-'use strict';
+'use strict'
 
+let renderer
 let svgMode = false
 let startOffsetY
 
@@ -64,8 +65,11 @@ function setup() {
    let svgParam = (params.svg !== "true") ? false : true
    svgMode = svgParam
    print("svg? "+svgParam)
+   //if (svgMode) {
+   //   noLoop()
+   //}
 
-   createCanvas(windowWidth-10, windowHeight-10,(svgParam)?SVG:"")
+   renderer = createCanvas(windowWidth-10, windowHeight-10,(svgParam)?SVG:"")
    strokeCap(ROUND)
    rectMode(CORNERS)
    textFont("Courier Mono")
@@ -229,6 +233,7 @@ function keyPressed() {
 
 function draw () {
    clear()
+   //renderer.drawingContext.__clearCanvas();
 
    // translate left/right arrow use to correct "to" value
 
