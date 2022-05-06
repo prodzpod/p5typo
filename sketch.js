@@ -49,6 +49,7 @@ let typeGradient
 let typeAscenders
 let themeDark
 let themeLight
+let typeSpacingY = 0
 
 let linesArray = ["hamburgefonstiv", ""]
 let currentLine = 0
@@ -126,7 +127,66 @@ function setup() {
    values.colorLight.from = color("#C4B6FF")
 }
 
-function writeParamsToURL() {
+function changeValuesAndURL () {
+
+   // translate left/right arrow use to correct "to" value
+   if (sliderChange !== 0) {
+      switch (sliderMode) {
+         case 0:
+            values.size.to = values.size.from + sliderChange
+            // smallest possible size is 1
+            values.size.to = max(values.size.to, 1)
+            break;
+         case 1:
+            values.rings.to = values.rings.from + sliderChange
+            // smallest possible ring count is 1
+            values.rings.to = max(values.rings.to, 1)
+            break;
+         case 2:
+            values.spacing.to = values.spacing.from + sliderChange
+            // furthest spacing is half the outer size
+            values.spacing.to = max(values.spacing.to, Math.ceil(values.size.from*-0.5))
+            values.spacing.to = min(values.spacing.to, Math.ceil(values.size.from*0.25))
+            break;
+         case 3:
+            values.offsetX.to = values.offsetX.from + sliderChange
+            //furthest offset is spacing + outer size
+            values.offsetX.to = max(values.offsetX.to, -(values.size.from+values.spacing.from))
+            values.offsetX.to = min(values.offsetX.to, (values.size.from+values.spacing.from))
+            break;
+         case 4:
+            values.offsetY.to = values.offsetY.from + sliderChange
+            //furthest vert offset is outer size
+            values.offsetY.to = max(values.offsetY.to, -(values.size.from))
+            values.offsetY.to = min(values.offsetY.to, (values.size.from))
+            break;
+         case 5:
+            values.stretchX.to = values.stretchX.from + sliderChange
+            //stretch is minimum 0
+            values.stretchX.to = max(values.stretchX.to, 0)
+            break;
+         case 6:
+            values.stretchY.to = values.stretchY.from + sliderChange
+            //stretch is minimum 0
+            values.stretchY.to = max(values.stretchY.to, 0)
+            break;
+         case 7:
+            values.weight.to = values.weight.from + sliderChange
+            //weight
+            values.weight.to = max(values.weight.to, 2)
+            values.weight.to = min(values.weight.to, 9)
+            break;
+         case 8:
+            values.gradient.to = values.gradient.from + sliderChange
+            //gradient
+            values.gradient.to = max(values.gradient.to, 0)
+            values.gradient.to = min(values.gradient.to, 9)
+            break;
+      }
+      sliderChange = 0
+   }
+
+   // change URL
    let URL = String(window.location.href)
    if (URL.includes("?")) {
       URL = URL.split("?",1)
@@ -194,8 +254,7 @@ function writeParamsToURL() {
 function keyTyped() {
    if (key === "2") {
       darkMode = !darkMode
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "1") {
@@ -236,40 +295,34 @@ function keyTyped() {
 
       values.colorDark.to = color('hsl('+floor(random(0,360))+', 100%, 06%)')
       values.colorLight.to = color('hsl('+floor(random(0,360))+', 100%, 90%)')
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "3") {
       //toggle print b/w mode
       printMode = !printMode
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "4") {
       //toggle debug mode
       debugGridMode = !debugGridMode
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "5") {
       waveMode = !waveMode
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "6") {
       drawFills = !drawFills
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "7") {
       alignCenter = !alignCenter
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "8") {
@@ -283,36 +336,30 @@ function keyTyped() {
       values.stretchY.to = 0
       values.weight.to = 7
       values.gradient.to = 0
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (key === "9") {
       linesArray = ["",""]
       currentLine = 0
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
 
    if (validLetters.includes(key)) {
       linesArray[currentLine] += key;
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
    }
 }
 
 function keyPressed() {
-   
-
    if (keyCode === BACKSPACE) {
       if (currentLine > 0 && linesArray[currentLine].length === 0) {
          currentLine--
       } else {
          linesArray[currentLine] = linesArray[currentLine].slice(0, -1)
       }
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
 
@@ -320,22 +367,19 @@ function keyPressed() {
       if (currentLine < 1) {
          currentLine++
       }
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
 
    sliderChange = 0
    if (keyCode === LEFT_ARROW) {
       sliderChange = -1
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (keyCode === RIGHT_ARROW) {
       sliderChange = 1
-      //draw()
-      writeParamsToURL()
+      changeValuesAndURL()
       return
    }
    else if (keyCode === DOWN_ARROW) {
@@ -343,7 +387,6 @@ function keyPressed() {
       if (sliderMode >= sliderModes.length) {
          sliderMode = 0
       }
-      //draw()
       return
    }
    else if (keyCode === UP_ARROW) {
@@ -351,7 +394,6 @@ function keyPressed() {
       if (sliderMode < 0) {
          sliderMode = sliderModes.length-1
       }
-      //draw()
       return
    }
 }
@@ -359,64 +401,6 @@ function keyPressed() {
 function draw () {
    if (svgMode) {
       clear()
-   }
-
-   // translate left/right arrow use to correct "to" value
-
-   if (sliderChange !== 0) {
-      switch (sliderMode) {
-         case 0:
-            values.size.to = values.size.from + sliderChange
-            // smallest possible size is 1
-            values.size.to = max(values.size.to, 1)
-            break;
-         case 1:
-            values.rings.to = values.rings.from + sliderChange
-            // smallest possible ring count is 1
-            values.rings.to = max(values.rings.to, 1)
-            break;
-         case 2:
-            values.spacing.to = values.spacing.from + sliderChange
-            // furthest spacing is half the outer size
-            values.spacing.to = max(values.spacing.to, Math.ceil(values.size.from*-0.5))
-            values.spacing.to = min(values.spacing.to, Math.ceil(values.size.from*0.25))
-            break;
-         case 3:
-            values.offsetX.to = values.offsetX.from + sliderChange
-            //furthest offset is spacing + outer size
-            values.offsetX.to = max(values.offsetX.to, -(values.size.from+values.spacing.from))
-            values.offsetX.to = min(values.offsetX.to, (values.size.from+values.spacing.from))
-            break;
-         case 4:
-            values.offsetY.to = values.offsetY.from + sliderChange
-            //furthest vert offset is outer size
-            values.offsetY.to = max(values.offsetY.to, -(values.size.from))
-            values.offsetY.to = min(values.offsetY.to, (values.size.from))
-            break;
-         case 5:
-            values.stretchX.to = values.stretchX.from + sliderChange
-            //stretch is minimum 0
-            values.stretchX.to = max(values.stretchX.to, 0)
-            break;
-         case 6:
-            values.stretchY.to = values.stretchY.from + sliderChange
-            //stretch is minimum 0
-            values.stretchY.to = max(values.stretchY.to, 0)
-            break;
-         case 7:
-            values.weight.to = values.weight.from + sliderChange
-            //weight
-            values.weight.to = max(values.weight.to, 2)
-            values.weight.to = min(values.weight.to, 9)
-            break;
-         case 8:
-            values.gradient.to = values.gradient.from + sliderChange
-            //gradient
-            values.gradient.to = max(values.gradient.to, 0)
-            values.gradient.to = min(values.gradient.to, 9)
-            break;
-      }
-      sliderChange = 0
    }
 
    // if a "to" value in the values object is not undefined, get closer to it by increasing that "lerp"
@@ -727,13 +711,6 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
       if (!waveMode) {
          return inner
       }
-      // let maxRings = Math.floor(size/2) - ((size % 2 === 0) ? 1 : 0)
-      // let ringCount = (i+frameCount*0.05) % (maxRings*2)
-      // if (ringCount > maxRings) {
-      //    ringCount = 2*maxRings - ringCount
-      // }
-      // return size - ringCount*2
-
       return min(size, inner + i*2)
    }
 
@@ -795,6 +772,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
       const topOffset = (letterOuter < 0) ? -offsetX : 0
       const wideOffset = 0.5*letterOuter + 0.5*letterInner
       const extendOffset = ((letterOuter % 2 == 0) ? 0 : 0.5) + (typeStretchX-(typeStretchX%2))*0.5
+      const extendDownOffset = ((letterOuter % 2 == 0) ? 0 : 0.5)
 
       // determine spacing to the right of character based on both
       const spacingResult = addSpacingBetween(prevchar, char, nextchar, spacing, letterInner, letterOuter, extendOffset)
@@ -1280,11 +1258,11 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             }
             else if (char === "g") {
                drawLineFill(3, 3, 0, 0, "v", 0)
-               drawArcFill(3, 3, 0, letterOuter*0.5, false, true)
+               drawArcFill(3, 3, 0, letterOuter*0.5-extendDownOffset, false, true)
 
-               drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
-               drawArc(ringSizes, 3, 3, 0, letterOuter*0.5, "", "", undefined, false, false, true)
-               drawArc(ringSizes, 4, 4, 0, letterOuter*0.5, "sharp", "end", undefined, true)
+               drawLine(ringSizes, 3, 3, 0, 0, "v", -extendDownOffset)
+               drawArc(ringSizes, 3, 3, 0, letterOuter*0.5-extendDownOffset, "", "", undefined, false, false, true)
+               drawArc(ringSizes, 4, 4, 0, letterOuter*0.5-extendDownOffset, "sharp", "end", undefined, true)
             }
             else if (char === "p") {
                drawLineFill(4, 4, 0, 0, "v", descenders)
@@ -1632,12 +1610,12 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
          case "j":
             drawLineFill(1, 1, 0, 0, "v", 0)
             drawLineFill(4, 4, 0, 0, "v", 0)
-            drawArcFill(3, 2, -letterInner-weight, letterOuter*0.5+typeStretchY, false, true)
+            drawArcFill(3, 4, -letterInner-weight, letterOuter*0.5+extendDownOffset, false, true)
 
             drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
             drawLine(ringSizes, 1, 1, 0, 0, "v", 0)
-            drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
-            drawArc(ringSizes, 3, 4, -letterInner-weight, letterOuter*0.5, "", "", undefined, false, false, true)
+            drawLine(ringSizes, 4, 4, 0, 0, "v", extendDownOffset)
+            drawArc(ringSizes, 3, 4, -letterInner-weight, letterOuter*0.5+extendDownOffset, "", "", undefined, false, false, true)
             break;
          case "z":
             //drawArcFill(1, 1, 0, 0)
@@ -1674,14 +1652,15 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
 
    const height = typeSize + Math.abs(typeOffsetY) + typeStretchY
    const asc = typeAscenders*typeSize
-   startOffsetY += height+asc*2 + 0.5*typeSize
+   const desc = Math.ceil(typeSize/2)
+   startOffsetY += height+asc+desc+typeSpacingY
 
    if (!printMode) {
       lineColor.setAlpha(40)
       stroke(lineColor)
       strokeWeight(0.2*(svgMode?appScale:1))
 
-      const i = linenumber * (height+asc*2+ 0.5*typeSize) - typeSize/2
+      const i = linenumber * (height+asc+desc+typeSpacingY) - typeSize/2
       if (typeOffsetX<0) {
          translate(typeOffsetX,0)
       }
@@ -1697,7 +1676,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
 
          //horizontal gridlines
          push()
-         translate(0,i+height*+0.5)
+         translate(0,i+height*0.5)
          for (let j = 0; j <= totalWidth; j++) {
             line(j, -height/2-typeAscenders*typeSize, j, height/2+typeAscenders*typeSize)
          }
