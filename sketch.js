@@ -53,7 +53,12 @@ let typeSpacingY = 0
 
 let linesArray = ["hamburgefonstiv", ""]
 let currentLine = 0
-const validLetters = "abcdefghijklmnopqrstuvwxyz,.!-_ "
+const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!-_ "
+
+// use alt letters?
+let altS = false
+
+
 
 function windowResized() {
    resizeCanvas(windowWidth-10, windowHeight-10)
@@ -655,25 +660,25 @@ function drawElements() {
 function isin (char, sets) {
 
    let found = false
-   sets.forEach((s) => {
+   sets.forEach((set) => {
       if (found === false) {
-         if (s === "ul") {
+         if (set === "ul") {
             //up left edge
-            found = "bhijkltuvwy".includes(char)
+            found = "bhijkltuüvwy".includes(char)
          }
-         else if (s === "dl") {
+         else if (set === "dl") {
             //down left edge
             found = "hijkmnprfv".includes(char)
          }
-         else if (s === "ur") {
+         else if (set === "ur") {
             //down left edge
-            found = "dijuvwy".includes(char)
+            found = "dijuüvwy".includes(char)
          }
-         else if (s === "dr") {
+         else if (set === "dr") {
             //down left edge
-            found = "aghijmnqye".includes(char)
+            found = "aäghijmnqye".includes(char)
          }
-         else if (s === "gap") {
+         else if (set === "gap") {
             //separating regular letters
             found = "., :;-_!?".includes(char)
          }
@@ -920,6 +925,9 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             } else if (cutSide === "end") {
                endAngle -= cutDifference
             }
+
+            // random animation idea, maybe try more with this later
+            //endAngle = startAngle + (endAngle-startAngle) * Math.abs(((frameCount % 60) /30)-1)
 
             if (drawCurve) {
                arc(xpos,ypos,size,size,startAngle,endAngle)
@@ -1173,15 +1181,26 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
       const nextOffset = addSpacingBetween(char, nextchar, "", spacing, letterInner, letterOuter, extendOffset).offset
       switch(nextchar) {
          case "s":
-            verticalOffset += nextOffset
-            if (char === "s") {
-               drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end", isFlipped)
-            } else if (char === "r") {
-               drawArc(ringSizes, 4, 4, nextSpacing, 0, "sharp", "end", isFlipped)
-            } else if (!isin(char,["gap", "dr"]) && char !== "f") {
-               drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end", isFlipped)
+            if (!altS) {
+               verticalOffset += nextOffset
+               if (char === "s") {
+                  drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end", isFlipped)
+               } else if (char === "r") {
+                  drawArc(ringSizes, 4, 4, nextSpacing, 0, "sharp", "end", isFlipped)
+               } else if (!isin(char,["gap", "dr"]) && char !== "f") {
+                  drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end", isFlipped)
+               }
+               verticalOffset -= nextOffset
+            } else {
+               //alt S
+               verticalOffset += nextOffset
+               if (isin(char,["dr"])) {
+                  drawArc(ringSizes, 4, 4, nextSpacing, 0, "sharp", "end")
+               } else if (char !== "t") {
+                  drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end")
+               }
+               verticalOffset -= nextOffset
             }
-            verticalOffset -= nextOffset
             break;
          case "x":
             push()
@@ -1199,7 +1218,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             }
             // bottom connection
             if (!"xef".includes(char) && !isin(char,["gap"])) {
-               if (char === "s") {
+               if (char === "s" && !altS) {
                   drawArc(ringSizes, 4, 4, nextSpacing, 0, "round", "end", isFlipped)
                } else if (char === "r" || isin(char,["dr"])) {
                   drawArc(ringSizes, 4, 4, nextSpacing, 0, "sharp", "end", isFlipped)
@@ -1224,6 +1243,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
       // draw chars
       switch(char) {
          case "o":
+         case "ö":
          case "d":
          case "b":
          case "p":
@@ -1268,6 +1288,9 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
                drawLineFill(4, 4, 0, 0, "v", descenders)
 
                drawLine(ringSizes, 4, 4, 0, 0, "v", descenders)
+            } else if (char === "ö") {
+               drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
+               drawLine(ringSizes, 2, 2, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
             }
             break;
          case "c":
@@ -1307,7 +1330,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             // SECOND LAYER
             drawLineFill(3, 3, 0, 0, "h", 0)
 
-            if (isin(nextchar,["gap"]) || "s".includes(nextchar)) {
+            if (isin(nextchar,["gap"]) || "s".includes(nextchar) && !altS) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", 0)
             } else if ("zx".includes(nextchar)) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", outer*0.5 + typeStretchX-weight)
@@ -1322,6 +1345,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             }
             break;
          case "a":
+         case "ä":
             drawArcFill(1, 1, 0, 0)
             drawArcFill(2, 2, 0, 0)
             drawArcFill(3, 3, 0, 0)
@@ -1336,6 +1360,11 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             drawLineFill(3, 3, 0, 0, "v", 0)
 
             drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
+
+            if (char === "ä") {
+               drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
+               drawLine(ringSizes, 2, 2, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
+            }
             break;
          case "n":
          case "m":
@@ -1363,33 +1392,46 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             }
             break;
          case "s":
-            push()
-            if (isin(prevchar,["gap", "dr"])) {
-               translate(-letterOuter*0.5+extendOffset-typeStretchX,0)
-            }
-            drawArcFill(3, 3, 0, 0)
-            drawArcFill(1, 2, wideOffset, 0)
-            if (!(isin(nextchar,["gap", "ul"]))) {
-               drawArcFill(2, 1, wideOffset + typeStretchX*2, 0)
-            }
-            pop()
+            if (!altS) {
+               push()
+               if (isin(prevchar,["gap", "dr"])) {
+                  translate(-letterOuter*0.5+extendOffset-typeStretchX,0)
+               }
+               drawArcFill(3, 3, 0, 0)
+               drawArcFill(1, 2, wideOffset, 0)
+               if (!(isin(nextchar,["gap", "ul"]))) {
+                  drawArcFill(2, 1, wideOffset + typeStretchX*2, 0)
+               }
+               pop()
 
-            push()
-            const isFlipped = ("cktfe".includes(prevchar)) ? "" : "flipped"
-            //start further left if not connecting left
-            if (isin(prevchar,["gap", "dr"])) {
-               translate(-letterOuter*0.5 + extendOffset -typeStretchX,0)
-               drawArc(ringSizes, 3, 3, 0, 0, "extend", "end", isFlipped)
+               push()
+               const isFlipped = ("cktfe".includes(prevchar)) ? "" : "flipped"
+               //start further left if not connecting left
+               if (isin(prevchar,["gap", "dr"])) {
+                  translate(-letterOuter*0.5 + extendOffset -typeStretchX,0)
+                  drawArc(ringSizes, 3, 3, 0, 0, "extend", "end", isFlipped)
+               } else {
+                  drawArc(ringSizes, 3, 3, 0, 0, "", "", isFlipped)
+               }
+               if (!isin(nextchar,["gap", "ul"]) || nextchar === "s") {
+                  drawArc(ringSizes, 1, 2, wideOffset, 0, "", "", isFlipped)
+                  drawArc(ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "round", "end", isFlipped)
+               } else {
+                  drawArc(ringSizes, 1, 2, wideOffset, 0, "extend", "end", isFlipped)
+               }
+               pop()
             } else {
-               drawArc(ringSizes, 3, 3, 0, 0, "", "", isFlipped)
+               // alternative cursive s
+               drawArcFill(2, 2, 0, 0)
+               drawArcFill(3, 3, 0, 0)
+               //drawArcFill(4, 4, 0, 0)
+
+               drawArc(ringSizes, 2, 2, 0, 0, "", "")
+               drawArc(ringSizes, 3, 3, 0, 0, "", "")
+               if (isin(prevchar,["gap"])) {
+                  drawArc(ringSizes, 4, 4, 0, 0, "", "")
+               }
             }
-            if (!isin(nextchar,["gap", "ul"]) || nextchar === "s") {
-               drawArc(ringSizes, 1, 2, wideOffset, 0, "", "", isFlipped)
-               drawArc(ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "round", "end", isFlipped)
-            } else {
-               drawArc(ringSizes, 1, 2, wideOffset, 0, "extend", "end", isFlipped)
-            }
-            pop()
             break;
          case "x":
             push()
@@ -1438,6 +1480,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             pop()
             break;
          case "u":
+         case "ü":
          case "w":
          case "y":
             drawLineFill(1, 1, 0, 0, "v", 0)
@@ -1466,6 +1509,9 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
                drawLine(ringSizes, 1, 2, wideOffset, 0, "v", 0, undefined, "flipped")
                drawArc(ringSizes, 4, 3, wideOffset, 0, "", "", "flipped")
                drawArc(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "", "", "flipped")
+            } else if (char === "ü") {
+               drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
+               drawLine(ringSizes, 2, 2, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
             }
             break;
          case "r":
@@ -1729,12 +1775,14 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
          }
          break;
       case "s":
-         charWidth = weight*3 + inner*2
-         if (isin(nextchar,["gap", "ul"])) {
-            charWidth += -0.5*outer +1
-         }
-         if (isin(prevchar,["gap", "dr"])) {
-            charWidth += -0.5*outer
+         if (!altS) {
+            charWidth = weight*3 + inner*2
+            if (isin(nextchar,["gap", "ul"])) {
+               charWidth += -0.5*outer +1
+            }
+            if (isin(prevchar,["gap", "dr"])) {
+               charWidth += -0.5*outer
+            }
          }
          break;
       case " ":
@@ -1763,11 +1811,11 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
    }
 
    // 1 less space after letters with cutoff
-   if ("ktlcrfsx".includes(char) && isin(nextchar,["gap"])) {
+   if ("ktlcrfsx-".includes(char) && isin(nextchar,["gap"])) {
       charWidth -= 1
    }
    // 1 less space in front of xzy
-   if ("xsz".includes(nextchar) && isin(char,["gap"])) {
+   if ("xsz-".includes(nextchar) && isin(char,["gap"])) {
       charWidth -= 1
    }
 
@@ -1778,11 +1826,13 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
    let minSpaceAfter
    switch(char) {
       case "s":
-         if (!isin(nextchar,["gap", "ul"])) {
-            spaceAfter = -weight
-            afterConnect = true
-         } else {
-            minSpaceAfter = 0
+         if (!altS) {
+            if (!isin(nextchar,["gap", "ul"])) {
+               spaceAfter = -weight
+               afterConnect = true
+            } else {
+               minSpaceAfter = 0
+            }
          }
          break;
       case "k":
@@ -1834,14 +1884,22 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
    if (afterConnect === false) {
       switch(nextchar) {
          case "s":
-            if (!isin(char,["gap", "dr"])) {
-               spaceBefore = -weight
-               beforeConnect = true
-            } else {
-               if ("e".includes(char)) {
+            if (!altS) {
+               if (!isin(char,["gap", "dr"])) {
+                  spaceBefore = -weight
                   beforeConnect = true
                } else {
-                  minSpaceBefore = 1
+                  if ("e".includes(char)) {
+                     beforeConnect = true
+                  } else {
+                     minSpaceBefore = 1
+                  }
+               }
+            } else {
+               //alt s
+               if (!isin(char, ["gap"])) {
+                  spaceBefore = -weight
+                  beforeConnect = true
                }
             }
             break;
@@ -1929,18 +1987,20 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
       case "x":
          offsetSegments = 2
          if (char === "s") {
-            // stretch spacing depends on if it connects
-            if (isin(prevchar,["gap", "dr"])) {
-               stretchWidth += extendOffset
-            } else {
-               stretchWidth += typeStretchX
-               offsetSegments -=1
-            }
-            if (isin(nextchar,["gap", "ul"])) {
-               stretchWidth += extendOffset
-            } else {
-               stretchWidth += typeStretchX
-               offsetSegments -=1
+            if (!altS) {
+               // stretch spacing depends on if it connects
+               if (isin(prevchar,["gap", "dr"])) {
+                  stretchWidth += extendOffset
+               } else {
+                  stretchWidth += typeStretchX
+                  offsetSegments -=1
+               }
+               if (isin(nextchar,["gap", "ul"])) {
+                  stretchWidth += extendOffset
+               } else {
+                  stretchWidth += typeStretchX
+                  offsetSegments -=1
+               }
             }
          } else {
             stretchWidth += typeStretchX * 2
