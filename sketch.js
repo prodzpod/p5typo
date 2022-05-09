@@ -1,6 +1,6 @@
 'use strict'
 
-let renderer
+let cnv
 let svgMode = false
 let startOffsetY
 
@@ -122,7 +122,7 @@ function setup() {
       }
    }
 
-   renderer = createCanvas(windowWidth-10, windowHeight-10,(svgMode)?SVG:"")
+   cnv = createCanvas(windowWidth-10, windowHeight-10,(svgMode)?SVG:"")
    strokeCap(ROUND)
    rectMode(CORNERS)
    textFont("Courier Mono")
@@ -405,7 +405,7 @@ function keyPressed() {
 
 function draw () {
    if (svgMode) {
-      clear()
+      noLoop()
    }
 
    // if a "to" value in the values object is not undefined, get closer to it by increasing that "lerp"
