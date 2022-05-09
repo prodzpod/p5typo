@@ -257,6 +257,9 @@ function changeValuesAndURL () {
 }
 
 function keyTyped() {
+   if (svgMode) {
+      return
+   }
    if (key === "2") {
       darkMode = !darkMode
       changeValuesAndURL()
@@ -358,6 +361,9 @@ function keyTyped() {
 }
 
 function keyPressed() {
+   if (svgMode) {
+      return
+   }
    if (keyCode === BACKSPACE) {
       if (currentLine > 0 && linesArray[currentLine].length === 0) {
          currentLine--
