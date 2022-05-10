@@ -52,7 +52,7 @@ let themeDark
 let themeLight
 let typeSpacingY = 0
 
-let linesArray = ["hamburgefonstiv", ""]
+let linesArray = ["hamburgefonstiv", "", ""]
 let currentLine = 0
 const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!-_ "
 
@@ -102,11 +102,14 @@ function setup() {
       print("Loaded with URL Mode: Stroke Gradient")
    }
    if (params.line1 !== null && params.line1.length > 0) {
-      if (params.line2 !== null) {
-         linesArray = [params.line1, params.line2]
-         currentLine = linesArray.length -1
+      if (params.line3 !== null && params.line2 !== null) {
+         linesArray = [params.line1, params.line2, params.line3]
+         currentLine = 2
+      } else if (params.line2 !== null) {
+         linesArray = [params.line1, params.line2, ""]
+         currentLine = 1
       } else {
-         linesArray = [params.line1, ""]
+         linesArray = [params.line1, "", ""]
          currentLine = 0
       }
       print("Loaded with URL Text")
@@ -238,6 +241,9 @@ function changeValuesAndURL () {
    if (currentLine > 0) {
       newParams.append("line2",linesArray[1])
    }
+   if (currentLine > 1) {
+      newParams.append("line3",linesArray[2])
+   }
 
    // add other parameters afterwards
    if (svgMode) {
@@ -363,7 +369,7 @@ function keyTyped() {
       return
    }
    else if (key === "9") {
-      linesArray = ["",""]
+      linesArray = ["","",""]
       currentLine = 0
       changeValuesAndURL()
       return
@@ -390,7 +396,7 @@ function keyPressed() {
    }
 
    if (keyCode === RETURN) {
-      if (currentLine < 1) {
+      if (currentLine < 2) {
          currentLine++
       }
       changeValuesAndURL()
@@ -514,9 +520,13 @@ function drawElements() {
    if (currentLine === 0) {
       text(linesArray[0], col5, 0)
    }
-   translate(0,2.5)
+   translate(0,2)
    if (currentLine === 1) {
       text(linesArray[1], col5, 0)
+   }
+   translate(0,2)
+   if (currentLine === 2) {
+      text(linesArray[2], col5, 0)
    }
    pop()
 
@@ -630,17 +640,20 @@ function drawElements() {
    pop()
 
 
-   stroke(lineColor)
-   strokeWeight(0.2)
-   line(col5-1, -1.5, col5-1, 2.5)
-   noStroke()
+   //stroke(lineColor)
+   //strokeWeight(0.2)
+   //line(col5-1, -1.5, col5-1, 2.5)
+   //noStroke()
 
    push()
-   const line1 = (linesArray[0].length>0) ? linesArray[0] : "o".repeat(9)
+   const line1 = (linesArray[0].length>0) ? linesArray[0] : ".o".repeat(9)
    text((currentLine === 0) ? linesArray[0]+"_":line1, col5, 0)
-   translate(0,2.5)
-   const line2 = (linesArray[1].length>0) ? linesArray[1] : "o".repeat(9)
+   translate(0,2)
+   const line2 = (linesArray[1].length>0) ? linesArray[1] : ".".repeat(9)
    text((currentLine === 1) ? linesArray[1]+"_":line2, col5, 0)
+   translate(0,2)
+   const line3 = (linesArray[2].length>0) ? linesArray[2] : ".".repeat(9)
+   text((currentLine === 2) ? linesArray[2]+"_":line3, col5, 0)
 
    translate(0,5)
    text("abcdefghijklmnopqrstuvwxyz-.,!", col5, 0)
@@ -674,6 +687,7 @@ function drawElements() {
    }
    drawStyle(0, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
    drawStyle(1, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
+   drawStyle(2, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
 
    pop()
 }
