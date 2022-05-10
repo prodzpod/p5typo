@@ -12,6 +12,7 @@ let printMode = false
 let debugGridMode = false
 let drawFills = true
 let alignCenter = false
+let strokeGradient = false
 
 let sliderModes = [
    "size", "rings", "spacing", "xoffset", "yoffset", "xstretch", "ystretch", "weight", "gradient"
@@ -91,6 +92,14 @@ function setup() {
    if (params.invert === "true" || params.invert === "1") {
       darkMode = false
       print("Loaded with URL Mode: Inverted")
+   }
+   if (params.mono === "true" || params.mono === "1") {
+      printMode = true
+      print("Loaded with URL Mode: Mono")
+   }
+   if (params.strokegradient === "true" || params.strokegradient === "1") {
+      strokeGradient = true
+      print("Loaded with URL Mode: Stroke Gradient")
    }
    if (params.line1 !== null && params.line1.length > 0) {
       if (params.line2 !== null) {
@@ -237,6 +246,9 @@ function changeValuesAndURL () {
    if (!darkMode) {
       newParams.append("invert",true)
    }
+   if (printMode) {
+      newParams.append("mono",true)
+   }
    if (debugGridMode) {
       newParams.append("xray",true)
    }
@@ -248,6 +260,9 @@ function changeValuesAndURL () {
    }
    if (alignCenter) {
       newParams.append("center",true)
+   }
+   if (strokeGradient) {
+      newParams.append("strokegradient",true)
    }
 
    if (URLSearchParams.toString(newParams).length > 0) {
@@ -886,6 +901,9 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
          }
 
          strokeSizes.forEach((size) => {
+            if (strokeGradient && !debugGridMode) {
+               strokeWeight((typeWeight/10)*(svgMode?appScale:1)*map(size,smallest,biggest,0.3,1))
+            }
             stroke(lerpColor(innerColor, outerColor, map(size,innerEdgeReference,biggest,0,1)))
             if ((arcQ !== offQ) !== (flipped === "flipped")) {
                stroke(lerpColor(innerColor, outerColor, map(size,biggest,smallest,0,1)))
@@ -1022,6 +1040,9 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
          }
 
          strokeSizes.forEach((size) => {
+            if (strokeGradient && !debugGridMode) {
+               strokeWeight((typeWeight/10)*(svgMode?appScale:1)*map(size,smallest,biggest,0.3,1))
+            }
             stroke(lerpColor(innerColor, outerColor, map(size,innerEdgeReference,biggest,0,1)))
             if ((arcQ !== offQ) !== (flipped === "flipped")) {
                stroke(lerpColor(innerColor, outerColor, map(size,biggest,smallest,0,1)))
