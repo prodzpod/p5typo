@@ -7,12 +7,14 @@ let startOffsetY
 let bgColor
 let lineColor
 
+let noMenu = false
 let darkMode = true
 let printMode = false
 let debugGridMode = false
 let drawFills = true
 let alignCenter = false
 let strokeGradient = false
+let initialDraw = true
 
 let sliderModes = [
    "size", "rings", "spacing", "xoffset", "yoffset", "xstretch", "ystretch", "weight", "gradient"
@@ -22,6 +24,8 @@ let sliderChange = 0
 let waveMode = false
 
 let appScale = 10
+let totalWidth = [0, 0, 0, 0]
+let totalHeight = [0, 0, 0, 0]
 
 let values = {
    colorDark: {from: undefined, to: undefined, lerp: 0},
@@ -50,9 +54,9 @@ let typeGradient
 let typeAscenders
 let themeDark
 let themeLight
-let typeSpacingY = 0
+let typeSpacingY = undefined//5*0.25 +1
 
-let linesArray = ["hamburgefonstiv", "", ""]
+let linesArray = ["hamburgefonstiv", "", "", ""]
 let currentLine = 0
 const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!-_ "
 
@@ -62,7 +66,9 @@ let altS = false
 
 
 function windowResized() {
-   resizeCanvas(windowWidth-10, windowHeight-10)
+   if (!noMenu) {
+      resizeCanvas(windowWidth-10, windowHeight-10)
+   }
 }
 
 function setup() {
@@ -101,15 +107,22 @@ function setup() {
       strokeGradient = true
       print("Loaded with URL Mode: Stroke Gradient")
    }
+   if (params.nomenu === "true" || params.nomenu === "1") {
+      noMenu = true
+      print("Loaded with URL Mode: Menu Hidden")
+   }
    if (params.line1 !== null && params.line1.length > 0) {
-      if (params.line3 !== null && params.line2 !== null) {
-         linesArray = [params.line1, params.line2, params.line3]
+      if (params.line4 !== null && params.line3 !== null && params.line2 !== null) {
+         linesArray = [params.line1, params.line2, params.line3, params.line4]
+         currentLine = 3
+      } else if (params.line3 !== null && params.line2 !== null) {
+         linesArray = [params.line1, params.line2, params.line3, ""]
          currentLine = 2
       } else if (params.line2 !== null) {
-         linesArray = [params.line1, params.line2, ""]
+         linesArray = [params.line1, params.line2, "", ""]
          currentLine = 1
       } else {
-         linesArray = [params.line1, "", ""]
+         linesArray = [params.line1, "", "", ""]
          currentLine = 0
       }
       print("Loaded with URL Text")
@@ -145,7 +158,6 @@ function setup() {
 }
 
 function changeValuesAndURL () {
-
    // translate left/right arrow use to correct "to" value
    if (sliderChange !== 0) {
       switch (sliderMode) {
@@ -244,6 +256,9 @@ function changeValuesAndURL () {
    if (currentLine > 1) {
       newParams.append("line3",linesArray[2])
    }
+   if (currentLine > 2) {
+      newParams.append("line4",linesArray[3])
+   }
 
    // add other parameters afterwards
    if (svgMode) {
@@ -270,17 +285,21 @@ function changeValuesAndURL () {
    if (strokeGradient) {
       newParams.append("strokegradient",true)
    }
+   if (noMenu) {
+      newParams.append("nomenu",true)
+   }
 
    if (URLSearchParams.toString(newParams).length > 0) {
       URL += "?" + newParams
    }
    window.history.replaceState("", "", URL)
+
+   if (svgMode) {
+      location.reload()
+   }
 }
 
 function keyTyped() {
-   if (svgMode) {
-      return
-   }
    if (key === "2") {
       darkMode = !darkMode
       changeValuesAndURL()
@@ -369,7 +388,7 @@ function keyTyped() {
       return
    }
    else if (key === "9") {
-      linesArray = ["","",""]
+      linesArray = ["","","",""]
       currentLine = 0
       changeValuesAndURL()
       return
@@ -382,9 +401,6 @@ function keyTyped() {
 }
 
 function keyPressed() {
-   if (svgMode) {
-      return
-   }
    if (keyCode === BACKSPACE) {
       if (currentLine > 0 && linesArray[currentLine].length === 0) {
          currentLine--
@@ -396,7 +412,7 @@ function keyPressed() {
    }
 
    if (keyCode === RETURN) {
-      if (currentLine < 2) {
+      if (currentLine < linesArray.length-1) {
          currentLine++
       }
       changeValuesAndURL()
@@ -431,10 +447,6 @@ function keyPressed() {
 }
 
 function draw () {
-   if (svgMode) {
-      noLoop()
-   }
-
    // if a "to" value in the values object is not undefined, get closer to it by increasing that "lerp"
    // when the "lerp" value is at 6, the "to" value has been reached,
    // and can be cleared again, new "from" value set.
@@ -496,170 +508,185 @@ function draw () {
    strokeWeight(0.3*(svgMode?appScale:1))
 
    drawElements()
+
+   //first draw only
+   if (svgMode && initialDraw) {
+      // resize canvas to fit text if in noMenu mode
+      if (noMenu) {
+         const hMargin = 1
+         const vMargin = 1
+         const vGap = (typeSpacingY !== undefined) ? typeSpacingY : 0 
+         const newWidth = Math.max(...totalWidth) + hMargin*2
+         const newHeight = (currentLine+1) * Math.max(...totalHeight) + (currentLine)*vGap + vMargin*2
+         resizeCanvas(newWidth*appScale, newHeight*appScale)
+      }
+      initialDraw = false
+      loop()
+   } else if (svgMode) {
+      noLoop()
+   }
 }
 
 
 function drawElements() {
    push()
    scale(appScale)
-   translate(6, 6)
+   if (noMenu) translate(1,1)
+   else translate(6, 6)
 
-   textSize(2)
-   noStroke()
-   fill(lineColor)
-   textFont("IBM Plex Mono")
+   if (!noMenu) {
+      textSize(2)
+      noStroke()
+      fill(lineColor)
+      textFont("IBM Plex Mono")
+   
+      const col1 = 0
+      const col2 = 5
+      const col25 = 3
+      const col3 = 29
+      const col4 = 33
+      const col5 = 60
+   
+      push()
+      for (let i = 0; i <= currentLine; i++) {
+         if (i === currentLine) {
+            text(linesArray[i], col5, 0)
+         }
+         translate(0,2)
+      }
+      pop()
+   
+      push()
+      const sliderSpacing = 2
+      if (sliderMode === 0) {
+         translate(0,0*sliderSpacing)
+         text("size", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeSize), col25, 0)
+      }
+      else if (sliderMode === 1) {
+         translate(0,1*sliderSpacing)
+         text("ring count", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeRings), col25, 0)
+      }
+      else if (sliderMode === 2) {
+         translate(0,2*sliderSpacing)
+         text("spacing", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeSpacing), col25, 0)
+      }
+      else if (sliderMode === 3) {
+         translate(0,3*sliderSpacing)
+         text("h-offset", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeOffsetX), col25, 0)
+      }
+      else if (sliderMode === 4) {
+         translate(0,4*sliderSpacing)
+         text("v-offset", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeOffsetY), col25, 0)
+      }
+      else if (sliderMode === 5) {
+         translate(0,5*sliderSpacing)
+         text("h-stretch", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeStretchX), col25, 0)
+      }
+      else if (sliderMode === 6) {
+         translate(0,6*sliderSpacing)
+         text("v-stretch", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeStretchY), col25, 0)
+      }
+      else if (sliderMode === 7) {
+         translate(0,7*sliderSpacing)
+         text("weight", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeWeight), col25, 0)
+      }
+      else if (sliderMode === 8) {
+         translate(0,8*sliderSpacing)
+         text("gradient", col2, 0)
+         textAlign(RIGHT)
+         text(Math.round(typeGradient), col25, 0)
+      }
+      pop()
+   
+      lineColor.setAlpha(100)
+      fill(lineColor)
+   
+      push()
+      text("size         " ,col2, 0); translate (0,2.0)
+      text("ring count" ,col2, 0); translate (0,2.0)
+      text("spacing    " ,col2, 0); translate (0,2.0)
+      text("h-offset   " ,col2, 0); translate (0,2.0)
+      text("v-offset   " ,col2, 0); translate (0,2.0)
+      text("h-stretch " ,col2, 0); translate (0,2.0)
+      text("v-stretch " ,col2, 0); translate (0,2.0)
+      text("weight      " ,col2, 0); translate (0,2.0)
+      text("gradient   " ,col2, 0); translate (0,2.0)
+      pop()
+   
+      push(); textAlign(RIGHT)
+      text(addLeadingChar(Math.round(typeSize),3)      , col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeRings),3)    , col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeSpacing),3) , col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeOffsetX),3) , col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeOffsetY),3) , col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeStretchX),3), col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeStretchY),3), col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeWeight),3)   , col25, 0); translate(0,2.0)
+      text(addLeadingChar(Math.round(typeGradient),3), col25, 0); translate(0,2.0)
+      pop()
+   
+      push()
+      text("1:" , col3, 0); translate(0,2)
+      text("2:" , col3, 0); translate(0,2)
+      text("3:" , col3, 0); translate(0,2)
+      text("4:" , col3, 0); translate(0,2)
+      text("5:" , col3, 0); translate(0,2)
+      text("6:" , col3, 0); translate(0,2)
+      text("7:" , col3, 0); translate(0,2)
+      text("8:" , col3, 0); translate(0,2)
+      text("9:" , col3, 0); translate(0,2)
+      pop()
+   
+      push()
+      text("randomize    ", col4, 0); translate(0,2)
+      text("invert color ", col4, 0); translate(0,2)
+      text("monochromatic", col4, 0); translate(0,2)
+      text("xray mode    ", col4, 0); translate(0,2)
+      text("wave mode (test)", col4, 0); translate(0,2)
+      text("overlaps     ", col4, 0); translate(0,2)
+      text("alignment    ", col4, 0); translate(0,2)
+      text("clear style  ", col4, 0); translate(0,2)
+      text("clear text   ", col4, 0); translate(0,2)
+      pop()
+   
+   
+      //stroke(lineColor)
+      //strokeWeight(0.2)
+      //line(col5-1, -1.5, col5-1, 2.5)
+      //noStroke()
+   
+      push()
+      for (let i = 0; i < linesArray.length; i++) {
+         const line = (linesArray[i].length>0) ? linesArray[i] : ".".repeat(9)
+         text((currentLine === i) ? linesArray[i]+"_":line, col5, 0)
+         translate(0,2)
+      }
+   
+      translate(0,2)
+      text("abcdefghijklmnopqrstuvwxyz-.,!", col5, 0)
+      translate(0,2.5)
+      text("SPACE, BACKSPACE, RETURN", col5, 0)
+      pop()
 
-   const col1 = 0
-   const col2 = 5
-   const col25 = 3
-   const col3 = 29
-   const col4 = 33
-   const col5 = 60
-
-   push()
-   if (currentLine === 0) {
-      text(linesArray[0], col5, 0)
+      translate(0,22)
    }
-   translate(0,2)
-   if (currentLine === 1) {
-      text(linesArray[1], col5, 0)
-   }
-   translate(0,2)
-   if (currentLine === 2) {
-      text(linesArray[2], col5, 0)
-   }
-   pop()
-
-   push()
-   const sliderSpacing = 2
-   if (sliderMode === 0) {
-      translate(0,0*sliderSpacing)
-      text("size", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeSize), col25, 0)
-   }
-   else if (sliderMode === 1) {
-      translate(0,1*sliderSpacing)
-      text("ring count", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeRings), col25, 0)
-   }
-   else if (sliderMode === 2) {
-      translate(0,2*sliderSpacing)
-      text("spacing", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeSpacing), col25, 0)
-   }
-   else if (sliderMode === 3) {
-      translate(0,3*sliderSpacing)
-      text("h-offset", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeOffsetX), col25, 0)
-   }
-   else if (sliderMode === 4) {
-      translate(0,4*sliderSpacing)
-      text("v-offset", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeOffsetY), col25, 0)
-   }
-   else if (sliderMode === 5) {
-      translate(0,5*sliderSpacing)
-      text("h-stretch", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeStretchX), col25, 0)
-   }
-   else if (sliderMode === 6) {
-      translate(0,6*sliderSpacing)
-      text("v-stretch", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeStretchY), col25, 0)
-   }
-   else if (sliderMode === 7) {
-      translate(0,7*sliderSpacing)
-      text("weight", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeWeight), col25, 0)
-   }
-   else if (sliderMode === 8) {
-      translate(0,8*sliderSpacing)
-      text("gradient", col2, 0)
-      textAlign(RIGHT)
-      text(Math.round(typeGradient), col25, 0)
-   }
-   pop()
-
-   lineColor.setAlpha(100)
-   fill(lineColor)
-
-   push()
-   text("size         " ,col2, 0); translate (0,2.0)
-   text("ring count" ,col2, 0); translate (0,2.0)
-   text("spacing    " ,col2, 0); translate (0,2.0)
-   text("h-offset   " ,col2, 0); translate (0,2.0)
-   text("v-offset   " ,col2, 0); translate (0,2.0)
-   text("h-stretch " ,col2, 0); translate (0,2.0)
-   text("v-stretch " ,col2, 0); translate (0,2.0)
-   text("weight      " ,col2, 0); translate (0,2.0)
-   text("gradient   " ,col2, 0); translate (0,2.0)
-   pop()
-
-   push(); textAlign(RIGHT)
-   text(addLeadingChar(Math.round(typeSize),3)      , col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeRings),3)    , col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeSpacing),3) , col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeOffsetX),3) , col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeOffsetY),3) , col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeStretchX),3), col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeStretchY),3), col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeWeight),3)   , col25, 0); translate(0,2.0)
-   text(addLeadingChar(Math.round(typeGradient),3), col25, 0); translate(0,2.0)
-   pop()
-
-   push()
-   text("1:" , col3, 0); translate(0,2)
-   text("2:" , col3, 0); translate(0,2)
-   text("3:" , col3, 0); translate(0,2)
-   text("4:" , col3, 0); translate(0,2)
-   text("5:" , col3, 0); translate(0,2)
-   text("6:" , col3, 0); translate(0,2)
-   text("7:" , col3, 0); translate(0,2)
-   text("8:" , col3, 0); translate(0,2)
-   text("9:" , col3, 0); translate(0,2)
-   pop()
-
-   push()
-   text("randomize    ", col4, 0); translate(0,2)
-   text("invert color ", col4, 0); translate(0,2)
-   text("monochromatic", col4, 0); translate(0,2)
-   text("xray mode    ", col4, 0); translate(0,2)
-   text("wave mode (test)", col4, 0); translate(0,2)
-   text("overlaps     ", col4, 0); translate(0,2)
-   text("alignment    ", col4, 0); translate(0,2)
-   text("clear style  ", col4, 0); translate(0,2)
-   text("clear word   ", col4, 0); translate(0,2)
-   pop()
-
-
-   //stroke(lineColor)
-   //strokeWeight(0.2)
-   //line(col5-1, -1.5, col5-1, 2.5)
-   //noStroke()
-
-   push()
-   const line1 = (linesArray[0].length>0) ? linesArray[0] : ".o".repeat(9)
-   text((currentLine === 0) ? linesArray[0]+"_":line1, col5, 0)
-   translate(0,2)
-   const line2 = (linesArray[1].length>0) ? linesArray[1] : ".".repeat(9)
-   text((currentLine === 1) ? linesArray[1]+"_":line2, col5, 0)
-   translate(0,2)
-   const line3 = (linesArray[2].length>0) ? linesArray[2] : ".".repeat(9)
-   text((currentLine === 2) ? linesArray[2]+"_":line3, col5, 0)
-
-   translate(0,5)
-   text("abcdefghijklmnopqrstuvwxyz-.,!", col5, 0)
-   translate(0,2.5)
-   text("SPACE, BACKSPACE, RETURN", col5, 0)
-   pop()
+   translate(0, max(typeSize*typeAscenders, 1))
 
    strokeWeight((typeWeight/10)*(svgMode?appScale:1))
    lineColor.setAlpha(255)
@@ -679,16 +706,16 @@ function drawElements() {
       startOffsetY -= typeOffsetY
    }
 
-   translate(0,22 + typeAscenders*typeSize)
+   
    push()
    translate(0,0.5*typeSize)
    if (alignCenter && currentLine === 0) {
       translate(0,16)
    }
-   drawStyle(0, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
-   drawStyle(1, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
-   drawStyle(2, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
 
+   for (let i = 0; i <= currentLine; i++) {
+      drawStyle(i, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
+   }
    pop()
 }
 
@@ -723,15 +750,15 @@ function isin (char, sets) {
 }
 
 
-function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
+function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
 
    // don't draw anything for lines of text that have not been written yet
-   if (currentLine < linenumber) {
+   if (currentLine < lineNum) {
       return
    }
 
    // current line text
-   let lineText = linesArray[linenumber]
+   let lineText = linesArray[lineNum]
 
    // if line empty, but visible, put row of darker o's there
    const oldLineColor = lineColor
@@ -755,7 +782,7 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
    }
 
    // go through the letters once to get total spacing
-   let totalWidth = Math.abs(typeOffsetX)
+   totalWidth[lineNum] = Math.abs(typeOffsetX)
    for (let i = 0; i < lineText.length; i++) {
       // get characters
       const char = lineText[i]
@@ -767,13 +794,13 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
       letterInner = waveInner(i, letterInner, letterOuter)
 
       const extendOffset = ((letterOuter % 2 == 0) ? 0 : 0.5) + (typeStretchX-(typeStretchX%2))*0.5
-      totalWidth += addSpacingBetween(prevchar, char, nextchar, spacing, letterInner, letterOuter, extendOffset).width
+      totalWidth[lineNum] += addSpacingBetween(prevchar, char, nextchar, spacing, letterInner, letterOuter, extendOffset).width
    }
 
    //translate to center if toggled
    push()
    if (alignCenter) {
-      translate(-6+(width/appScale-totalWidth)/2,0)
+      translate(-6+(width/appScale-totalWidth[lineNum])/2,0)
    }
    if (typeOffsetX < 0) {
       translate(-typeOffsetX,0)
@@ -903,8 +930,11 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             strokeWeight(0.2*(svgMode?appScale:1))
          }
 
-         const innerColor = (debugGridMode)? color("orange"): lerpColor(lineColor,bgColor,typeGradient/10)
-         const outerColor = lineColor
+         let innerColor = (debugGridMode)? color("orange"): lerpColor(lineColor,bgColor,typeGradient/10)
+         let outerColor = lineColor
+
+         //innerColor = color("red")
+         //outerColor = color("yellow")
 
          const smallest = strokeSizes[strokeSizes.length-1]
          const biggest = strokeSizes[0]
@@ -1042,8 +1072,11 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
             strokeWeight(0.2*(svgMode?appScale:1))
          }
 
-         const innerColor = (debugGridMode)? color("lime"): lerpColor(lineColor,bgColor,typeGradient/10)
-         const outerColor = lineColor
+         let innerColor = (debugGridMode)? color("lime"): lerpColor(lineColor,bgColor,typeGradient/10)
+         let outerColor = lineColor
+
+         //innerColor = color("red")
+         //outerColor = color("yellow")
 
          const smallest = strokeSizes[strokeSizes.length-1]
          const biggest = strokeSizes[0]
@@ -1740,31 +1773,38 @@ function drawStyle (linenumber, inner, outer, spacing, offsetX, offsetY) {
    const height = typeSize + Math.abs(typeOffsetY) + typeStretchY
    const asc = typeAscenders*typeSize
    const desc = Math.ceil(typeSize/2)
-   startOffsetY += height+asc+desc+typeSpacingY
+   if (typeSpacingY !== undefined) {
+      startOffsetY += height+typeSpacingY
+      totalHeight[lineNum] = height +typeSpacingY
+   } else {
+      startOffsetY += height + asc + desc
+      totalHeight[lineNum] = height + asc + desc
+   }
+   
 
    if (!printMode) {
       lineColor.setAlpha(40)
       stroke(lineColor)
       strokeWeight(0.2*(svgMode?appScale:1))
 
-      const i = linenumber * (height+asc+desc+typeSpacingY) - typeSize/2
+      const i = lineNum * totalHeight[lineNum] - typeSize/2
       if (typeOffsetX<0) {
          translate(typeOffsetX,0)
       }
 
       if (debugGridMode) {
          //vertical gridlines
-         line(0, i, totalWidth, i)
-         line(0, i+height, totalWidth, i+height)
-         line(0, i-asc, totalWidth, i-asc)
-         line(0, i+height/2-typeOffsetY*0.5, totalWidth, i+height/2-typeOffsetY*0.5)
-         line(0, i+height/2+typeOffsetY*0.5, totalWidth, i+height/2+typeOffsetY*0.5)
-         line(0, i+height+asc, totalWidth, i+height+asc)
+         line(0, i, totalWidth[lineNum], i)
+         line(0, i+height, totalWidth[lineNum], i+height)
+         line(0, i-asc, totalWidth[lineNum], i-asc)
+         line(0, i+height/2-typeOffsetY*0.5, totalWidth[lineNum], i+height/2-typeOffsetY*0.5)
+         line(0, i+height/2+typeOffsetY*0.5, totalWidth[lineNum], i+height/2+typeOffsetY*0.5)
+         line(0, i+height+asc, totalWidth[lineNum], i+height+asc)
 
          //horizontal gridlines
          push()
          translate(0,i+height*0.5)
-         for (let j = 0; j <= totalWidth; j++) {
+         for (let j = 0; j <= totalWidth[lineNum]; j++) {
             line(j, -height/2-typeAscenders*typeSize, j, height/2+typeAscenders*typeSize)
          }
          pop()
