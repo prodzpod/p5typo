@@ -693,15 +693,6 @@ function drawElements() {
 
    startOffsetY = 0
 
-   let innerSize = typeSize - (typeRings-1) * 2
-   innerSize = min(innerSize, typeSize)
-
-   if (typeSize % 2 === 0) {
-      innerSize = max(2, innerSize)
-   } else {
-      innerSize = max(1, innerSize)
-   }
-
    if (typeOffsetY < 0) {
       startOffsetY -= typeOffsetY
    }
@@ -714,9 +705,18 @@ function drawElements() {
    }
 
    for (let i = 0; i <= currentLine; i++) {
-      drawStyle(i, innerSize, typeSize, typeSpacing, typeOffsetX, typeOffsetY)
+      drawStyle(i)
    }
    pop()
+}
+
+function getInnerSize (size, rings) {
+   let innerSize = min(size - (rings-1) * 2, size)
+
+   if (typeSize % 2 === 0) {
+      return max(2, innerSize)
+   }
+   return max(1, innerSize)
 }
 
 function isin (char, sets) {
@@ -750,7 +750,7 @@ function isin (char, sets) {
 }
 
 
-function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
+function drawStyle (lineNum) {
 
    // don't draw anything for lines of text that have not been written yet
    if (currentLine < lineNum) {
@@ -789,12 +789,12 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
       const nextchar = (lineText[i+1] !== undefined) ? lineText[i+1] : " "
       const prevchar = (lineText[i-1] !== undefined) ? lineText[i-1] : " "
       // WIP not writing this twice lol
-      let letterInner = inner
-      let letterOuter = outer
+      let letterInner = getInnerSize(typeSize, typeRings) //+ [2,4,3,-2,0,2,4,5][i % 8]
+      let letterOuter = typeSize //+ [2,4,3,-2,0,2,4,5][i % 8]
       letterInner = waveInner(i, letterInner, letterOuter)
 
       const extendOffset = ((letterOuter % 2 == 0) ? 0 : 0.5) + (typeStretchX-(typeStretchX%2))*0.5
-      totalWidth[lineNum] += addSpacingBetween(prevchar, char, nextchar, spacing, letterInner, letterOuter, extendOffset).width
+      totalWidth[lineNum] += addSpacingBetween(prevchar, char, nextchar, typeSpacing, letterInner, letterOuter, extendOffset).width
    }
 
    //translate to center if toggled
@@ -815,8 +815,8 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
       const prevchar = (lineText[i-1] !== undefined) ? lineText[i-1] : " "
 
       // ring sizes for this character
-      let letterInner = inner
-      let letterOuter = outer
+      let letterInner = getInnerSize(typeSize, typeRings) //+ [2,4,3,-2,0,2,4,5][i % 8]
+      let letterOuter = typeSize //+ [2,4,3,-2,0,2,4,5][i % 8]
 
       // change depending on the character index (i) if wave mode is on
       letterInner = waveInner(i, letterInner, letterOuter)
@@ -836,13 +836,13 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
       const weight = (letterOuter-letterInner)*0.5
       const oneoffset = (letterOuter>3 && letterInner>2) ? 1 : 0
       const splitoffset = (weight>0) ? 1 : 0
-      const topOffset = (letterOuter < 0) ? -offsetX : 0
+      const topOffset = (letterOuter < 0) ? -typeOffsetX : 0
       const wideOffset = 0.5*letterOuter + 0.5*letterInner
       const extendOffset = ((letterOuter % 2 == 0) ? 0 : 0.5) + (typeStretchX-(typeStretchX%2))*0.5
       const extendDownOffset = ((letterOuter % 2 == 0) ? 0 : 0.5)
 
       // determine spacing to the right of character based on both
-      const spacingResult = addSpacingBetween(prevchar, char, nextchar, spacing, letterInner, letterOuter, extendOffset)
+      const spacingResult = addSpacingBetween(prevchar, char, nextchar, typeSpacing, letterInner, letterOuter, extendOffset)
       const nextSpacing = spacingResult.width
 
 
@@ -865,13 +865,13 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
          //}
 
          // base position
-         let xpos = topOffset + charsWidth + (outer/2)
+         let xpos = topOffset + charsWidth + (letterOuter/2)
          let ypos = startOffsetY
          // offset based on quarter and prev vertical offset
          let offx = (offQ === 3 || offQ === 4) ? 1:0
          let offy = (offQ === 2 || offQ === 3) ? 1:0
-         xpos += (offx > 0) ? offsetX : 0
-         ypos += (verticalOffset+offy) % 2==0 ? offsetY : 0
+         xpos += (offx > 0) ? typeOffsetX : 0
+         ypos += (verticalOffset+offy) % 2==0 ? typeOffsetY : 0
          xpos += (offy > 0) ? typeStretchX : 0
          ypos += (offx > 0) ? typeStretchY : 0
 
@@ -959,8 +959,8 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
             // offset based on quarter and prev vertical offset
             let offx = (offQ === 3 || offQ === 4) ? 1:0
             let offy = (offQ === 2 || offQ === 3) ? 1:0
-            xpos += (offx > 0) ? offsetX : 0
-            ypos += (verticalOffset+offy) % 2 === 0 ? offsetY : 0
+            xpos += (offx > 0) ? typeOffsetX : 0
+            ypos += (verticalOffset+offy) % 2 === 0 ? typeOffsetY : 0
             xpos += (offy > 0) ? typeStretchX : 0
             ypos += (offx > 0) ? typeStretchY : 0
 
@@ -978,11 +978,11 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
                cutDifference = HALF_PI-arcUntil(size, smallest-2, HALF_PI)
             }
             else if (cutMode === "round") {
-               if ((smallest <= 2 || outer+2 <= 2) && noSmol) {
+               if ((smallest <= 2 || letterOuter+2 <= 2) && noSmol) {
                   drawCurve = false
                }
                if (smallest > 2) {
-                  cutDifference = HALF_PI-arcUntilArc(size, outer+2, smallest+weight, HALF_PI)
+                  cutDifference = HALF_PI-arcUntilArc(size, letterOuter+2, smallest+weight, HALF_PI)
                } else {
                   cutDifference = 0
                }
@@ -1050,7 +1050,7 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
                      stretchXPos+offsetShift, stretchYPos + dirY*0.5*typeStretchY)
                }
             }
-            const extendamount = ((typeSize % 2 == 0) ? 0 : 0.5) + (typeStretchX-(typeStretchX%2))*0.5
+            const extendamount = ((letterOuter % 2 == 0) ? 0 : 0.5) + (typeStretchX-(typeStretchX%2))*0.5
             if (cutMode === "extend" && extendamount > 0) {
                const toSideX = (arcQ === 1 || arcQ === 2) ? -1 : 1
                let extendXPos = xpos
@@ -1101,8 +1101,8 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
             // offset based on quarter and prev vertical offset
             let offx = (offQ === 3 || offQ === 4) ? 1:0
             let offy = (offQ === 2 || offQ === 3) ? 1:0
-            xpos += (offx > 0) ? offsetX : 0
-            ypos += (verticalOffset+offy) % 2==0 ? offsetY : 0
+            xpos += (offx > 0) ? typeOffsetX : 0
+            ypos += (verticalOffset+offy) % 2==0 ? typeOffsetY : 0
             xpos += (offy > 0) ? typeStretchX : 0
             ypos += (offx > 0) ? typeStretchY : 0
 
@@ -1183,8 +1183,8 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
          // offset based on quarter and prev vertical offset
          let offx = (offQ === 3 || offQ === 4) ? 1:0
          let offy = (offQ === 2 || offQ === 3) ? 1:0
-         xpos += (offx > 0) ? offsetX : 0
-         ypos += (verticalOffset+offy) % 2==0 ? offsetY : 0
+         xpos += (offx > 0) ? typeOffsetX : 0
+         ypos += (verticalOffset+offy) % 2==0 ? typeOffsetY : 0
          xpos += (offy > 0) ? typeStretchX : 0
          ypos += (offx > 0) ? typeStretchY : 0
 
@@ -1252,7 +1252,7 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
       //"ktlcrfs"
 
       const isFlipped = ("cktfe".includes(char)) ? "" : "flipped"
-      const nextOffset = addSpacingBetween(char, nextchar, "", spacing, letterInner, letterOuter, extendOffset).offset
+      const nextOffset = addSpacingBetween(char, nextchar, "", typeSpacing, letterInner, letterOuter, extendOffset).offset
       switch(nextchar) {
          case "s":
             if (!altS) {
@@ -1409,10 +1409,10 @@ function drawStyle (lineNum, inner, outer, spacing, offsetX, offsetY) {
             } else if ("zx".includes(nextchar)) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", outer*0.5 + typeStretchX-weight)
             } else if (!isin(nextchar,["dl"])) {
-               drawLine(ringSizes, 3, 3, 0, 0, "h", -oneoffset*0.5+max(spacing, -weight))
-            } else if (spacing < 0) {
-               drawLine(ringSizes, 3, 3, 0, 0, "h", -oneoffset+max(spacing, -weight))
-            } else if (spacing > 0){
+               drawLine(ringSizes, 3, 3, 0, 0, "h", -oneoffset*0.5+max(typeSpacing, -weight))
+            } else if (typeSpacing < 0) {
+               drawLine(ringSizes, 3, 3, 0, 0, "h", -oneoffset+max(typeSpacing, -weight))
+            } else if (typeSpacing > 0){
                drawLine(ringSizes, 3, 3, 0, 0, "h", 0)
             } else {
                drawLine(ringSizes, 3, 3, 0, 0, "h", -oneoffset)
@@ -2120,16 +2120,16 @@ function arcUntil(circleSize, y, altValue) {
    return theta
 }
 
-function arcUntilArc(da, db, d, altValue) {
+function arcUntilArc (sizeCircle, sizeOther, dist, altValue) {
    //if too close
    // if (da <= 2 || db <= 2) {
    //    return altValue
    // }
 
-   const ra = da/2
-   const rb = db/2
+   const ra = sizeCircle/2
+   const rb = sizeOther/2
 
-   const x = (d**2-rb**2+ra**2) / (2*d)
+   const x = (dist**2-rb**2+ra**2) / (2*dist)
    const y = Math.sqrt(ra**2 - x**2)
    const theta = (Math.atan2(x, y));
    //const amount = (2*theta)/PI
