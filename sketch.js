@@ -1407,7 +1407,7 @@ function drawStyle (lineNum) {
             if (isin(nextchar,["gap"]) || "s".includes(nextchar) && !altS) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", 0)
             } else if ("zx".includes(nextchar)) {
-               drawLine(ringSizes, 3, 3, 0, 0, "h", outer*0.5 + typeStretchX-weight)
+               drawLine(ringSizes, 3, 3, 0, 0, "h", letterOuter*0.5 + typeStretchX-weight)
             } else if (!isin(nextchar,["dl"])) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", -oneoffset*0.5+max(typeSpacing, -weight))
             } else if (typeSpacing < 0) {
