@@ -535,7 +535,7 @@ function draw () {
          const vMargin = 1
          const vGap = (typeSpacingY !== undefined) ? typeSpacingY : 0 
          const newWidth = Math.max(...totalWidth) + hMargin*2
-         const newHeight = (currentLine+1) * Math.max(...totalHeight) + (currentLine)*vGap + vMargin*2
+         const newHeight = (currentLine+1) * Math.max(...totalHeight) + (currentLine)*vGap + vMargin
          resizeCanvas(newWidth*appScale, newHeight*appScale)
       }
       initialDraw = false
@@ -744,19 +744,19 @@ function isin (char, sets) {
       if (found === false) {
          if (set === "ul") {
             //up left edge
-            found = "bhikltuüvwy".includes(char)
+            found = "bhikltuüvwyn".includes(char)
          }
          else if (set === "dl") {
             //down left edge
             found = "hikmnprfv".includes(char)
          }
          else if (set === "ur") {
-            //down left edge
-            found = "dijuüvwy".includes(char)
+            //up right edge
+            found = "dijuüvwyhn".includes(char)
          }
          else if (set === "dr") {
-            //down left edge
-            found = "aäghimnqye".includes(char)
+            //down right edge
+            found = "aähimnqye".includes(char)
          }
          else if (set === "gap") {
             //separating regular letters
@@ -1444,23 +1444,36 @@ function drawStyle (lineNum) {
          case "g":
             drawCornerFill("round",1, 1, 0, 0)
             drawCornerFill("round",2, 2, 0, 0)
-            drawCornerFill("round",3, 3, 0, 0)
-            drawCornerFill("round",4, 4, 0, 0)
 
             drawCorner("round",ringSizes, 1, 1, 0, 0, "", "")
             drawCorner("round",ringSizes, 2, 2, 0, 0, "", "")
+
+            // if only one ring, move line down so there is a gap
+            const extragap = (letterOuter > letterInner) ? 0:1
+
+            // if weight is larger than desc height, remove enough rings here so that it's
+            //const descRings = ringSizes.slice()
+            //for (let r = 0; r < descRings.length; r++) {
+            //   const height = (descRings[r]-ringSizes[ringSizes.length-1])/2
+            //   if (height > descenders) {
+            //      descRings[r] = Math.floor(descenders*2)
+            //   }
+            //}
+
+            drawLine(ringSizes, 3, 3, 0, weight + extragap, "h", 0)
+            drawLine(ringSizes, 4, 4, 0, weight + extragap, "h", 0)
+
+
+            drawCornerFill("round",3, 3, 0, 0)
+            drawCornerFill("round",4, 4, 0, 0)
+
             drawCorner("round",ringSizes, 3, 3, 0, 0, "", "")
             drawCorner("round",ringSizes, 4, 4, 0, 0, "", "")
 
             drawLineFill(2, 2, 0, 0, "h", 0)
             //drawLineFill(3, 3, 0, 0, "v", 0)
-
             drawLine(ringSizes, 2, 2, 0, 0, "h", 0)
             //drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
-
-            const extragap = (letterOuter > letterInner) ? 0:1
-            drawLine(ringSizes, 3, 3, 0, weight + extragap, "h", 0)
-            drawLine(ringSizes, 4, 4, 0, weight + extragap, "h", 0)
             break;
          case "c":
             drawCornerFill("round",1, 1, 0, 0)
@@ -1856,14 +1869,16 @@ function drawStyle (lineNum) {
             if (isin(prevchar, ["gap"])) {
                drawCorner("round",ringSizes, 1, 1, 0, 0, "", "")
             }
-
             drawCorner("round",ringSizes, 2, 2, 0, 0, "", "")
+
+            //horizontal part
+            // if only one ring, move line down so there is a gap
+            drawLineFill(3, 3, 0, weight, "h", 0)
+            drawLineFill(4, 4, 0, weight, "h", 0)
+            drawLine(ringSizes, 3, 3, 0, weight + !(letterOuter > letterInner), "h", 0)
+            drawLine(ringSizes, 4, 4, 0, weight + !(letterOuter > letterInner), "h", 0)
+
             drawCorner("round",ringSizes, 3, 3, 0, 0, "", "")
-
-            // SECOND LAYER
-            drawCornerFill("round",2, 3, 0, letterInner+weight, false, true)
-
-            drawCorner("round",ringSizes, 2, 3, 0, letterInner+weight, "", "", undefined, false, false, true)
             break;
          case "-":
             drawLine([letterOuter], 1, 1, 0, +letterOuter*0.5, "h", -1)
@@ -1883,7 +1898,7 @@ function drawStyle (lineNum) {
 
    const height = typeSize + Math.abs(typeOffsetY) + typeStretchY
    const asc = typeAscenders*typeSize
-   const desc = Math.ceil(typeSize/2)
+   const desc = typeAscenders*typeSize + 1
    if (typeSpacingY !== undefined) {
       startOffsetY += height+typeSpacingY
       totalHeight[lineNum] = height +typeSpacingY
