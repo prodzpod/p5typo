@@ -752,7 +752,7 @@ function isin (char, sets) {
          }
          else if (set === "ur") {
             //up right edge
-            found = "dijuüvwyhn".includes(char)
+            found = "dijuüvwyhng".includes(char)
          }
          else if (set === "dr") {
             //down right edge
@@ -1380,10 +1380,13 @@ function drawStyle (lineNum) {
             break;
          case "z":
             verticalOffset += nextOffset
-            if (isin(char,["ur"]) || "l".includes(char)) {
+            if (isin(char,["ur"])) {
                drawCorner("round",ringSizes, 1, 1, nextSpacing, 0, "linecut", "start")
-            } else if (char !== "t") {
+            } else if (!isin(char,["gap"])) {
                drawCorner("round",ringSizes, 1, 1, nextSpacing, 0, "roundcut", "start")
+            } else {
+               //can't be reached, do below instead
+               drawCorner("round",ringSizes, 1, 1, nextSpacing, 0)
             }
             verticalOffset -= nextOffset
             break;
@@ -1513,9 +1516,9 @@ function drawStyle (lineNum) {
             // SECOND LAYER
             drawLineFill(3, 3, 0, 0, "h", 0)
 
-            if (isin(nextchar,["gap"]) || "s".includes(nextchar) && !altS) {
+            if (isin(nextchar,["gap"]) || "sz".includes(nextchar)) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", 0)
-            } else if ("zx".includes(nextchar)) {
+            } else if ("x".includes(nextchar)) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", letterOuter*0.5 + typeStretchX-weight)
             } else if (!isin(nextchar,["dl"])) {
                drawLine(ringSizes, 3, 3, 0, 0, "h", -oneoffset*0.5+max(typeSpacing, -weight))
@@ -1604,7 +1607,7 @@ function drawStyle (lineNum) {
                } else {
                   drawCorner("round",ringSizes, 3, 3, 0, 0, "", "", isFlipped)
                }
-               if (!isin(nextchar,["gap", "ul"]) || nextchar === "s") {
+               if (!isin(nextchar,["gap", "ul"]) && !"zx".includes(nextchar) || nextchar === "s") {
                   drawCorner("round",ringSizes, 1, 2, wideOffset, 0, "", "", isFlipped)
                   drawCorner("round",ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "roundcut", "end", isFlipped)
                } else {
@@ -1786,10 +1789,10 @@ function drawStyle (lineNum) {
             drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
             drawCorner("diagonal",ringSizes, 1, 1, weight, 0, "", "")
             drawCorner("diagonal",ringSizes, 4, 4, weight, 0, "", "")
-            if (!"xz".includes(nextchar)) {
+            if (!"x".includes(nextchar)) {
                drawLine(ringSizes, 2, 2, weight, 0, "h", -oneoffset-weight)
             }
-            if (!"sxz".includes(nextchar)) {
+            if (!"sx".includes(nextchar)) {
                if (!(isin(nextchar,["dl", "gap"]))) {
                   drawCorner("round",ringSizes, 3, 3, weight, 0, "roundcut", "start")
                } else {
@@ -1846,10 +1849,12 @@ function drawStyle (lineNum) {
             drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
             break;
          case "j":
+            // WIP missing fills
             drawLine(ringSizes, 2, 2, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
             drawCorner("square", ringSizes, 2, 2, 0, 0, "", "")
             drawCorner("round", ringSizes, 3, 3, 0, 0, "", "")
             if (isin(prevchar, ["gap"])) {
+               drawLine(ringSizes, 1, 1, 0, 0, "h", 0)
                drawCorner("round", ringSizes, 4, 4, 0, 0, "", "")
             }
             //drawLineFill(1, 1, 0, 0, "v", 0)
@@ -1862,23 +1867,32 @@ function drawStyle (lineNum) {
             //drawCorner("round",ringSizes, 3, 4, -letterInner-weight, letterOuter*0.5+extendDownOffset, "", "", undefined, false, false, true)
             break;
          case "z":
-            //drawCornerFill("round",1, 1, 0, 0)
-            drawCornerFill("round",2, 2, 0, 0)
-            drawCornerFill("round",3, 3, 0, 0)
-
+            push()
+            //1st line oben
             if (isin(prevchar, ["gap"])) {
-               drawCorner("round",ringSizes, 1, 1, 0, 0, "", "")
+               drawCorner("round", ringSizes, 1, 1, 0, 0, "", "")
             }
-            drawCorner("round",ringSizes, 2, 2, 0, 0, "", "")
 
-            //horizontal part
-            // if only one ring, move line down so there is a gap
-            drawLineFill(3, 3, 0, weight, "h", 0)
-            drawLineFill(4, 4, 0, weight, "h", 0)
-            drawLine(ringSizes, 3, 3, 0, weight + !(letterOuter > letterInner), "h", 0)
-            drawLine(ringSizes, 4, 4, 0, weight + !(letterOuter > letterInner), "h", 0)
+            drawLine(ringSizes, 2, 2, 0, 0, "h", 1)
+            drawCornerFill("diagonal", 1, 2, letterOuter*0.5 + 1, 0)
+            drawCorner("diagonal", ringSizes, 1, 2, letterOuter*0.5 + 1, 0, "", "")
 
-            drawCorner("round",ringSizes, 3, 3, 0, 0, "", "")
+            translate(weight+1,0)
+
+            drawCornerFill("round", 3, 3, 1, 0)
+            if (isin(nextchar,["dl"])) {
+               drawCorner("round",ringSizes, 3, 3, 1, 0, "linecut", "start")
+            } else if (!isin(nextchar,["gap"])) {
+               drawCorner("round",ringSizes, 3, 3, 1, 0, "roundcut", "start")
+            } else {
+               drawCorner("round",ringSizes, 3, 3, 1, 0, "", "")
+            }
+
+            drawCornerFill("diagonal", 3, 4, -letterOuter*0.5, 0)
+            drawCorner("diagonal", ringSizes, 3, 4, -letterOuter*0.5, 0, "", "")
+            drawLineFill(4, 4, 1, 0, "h", 1)
+            drawLine(ringSizes, 4, 4, 1, 0, "h", 1)
+            pop()
             break;
          case "-":
             drawLine([letterOuter], 1, 1, 0, +letterOuter*0.5, "h", -1)
@@ -1992,6 +2006,9 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
             }
          }
          break;
+      case "z":
+         charWidth = 2 + outer
+         break;
       case " ":
          charWidth = ceil(outer*0.5)
          break;
@@ -2020,8 +2037,8 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
    if ("ktlcrfsx-".includes(char) && isin(nextchar,["gap"])) {
       charWidth -= 1
    }
-   // 1 less space in front of xzyj
-   if ("xszj-".includes(nextchar) && isin(char,["gap"])) {
+   // 1 less space in front of xyj
+   if ("xsj-".includes(nextchar) && isin(char,["gap"])) {
       charWidth -= 1
    }
 
@@ -2042,6 +2059,7 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
          }
          break;
       case "k":
+      case "z":
          if (!isin(nextchar,["gap", "dl"])) {
             afterConnect = true
          } else {
@@ -2141,10 +2159,6 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
       beforeConnect = true
    }
    if ("ktlcrfsx".includes(char) && nextchar === "x") {
-      spaceBefore = -inner-weight-typeStretchX
-      beforeConnect = true
-   }
-   if ("ktlcrfsx".includes(char) && nextchar === "z") {
       spaceBefore = -inner-weight-typeStretchX
       beforeConnect = true
    }
