@@ -65,8 +65,6 @@ const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!-_ "
 // use alt letters?
 let altS = false
 
-
-
 function windowResized() {
    if (!noMenu) {
       resizeCanvas(windowWidth-10, windowHeight-10)
@@ -1040,8 +1038,21 @@ function drawStyle (lineNum) {
             } else if (shape === "square") {
                const dirX = (arcQ === 2 || arcQ === 3) ? 1:-1
                const dirY = (arcQ === 3 || arcQ === 4) ? 1:-1
-               line(xpos+dirX*size/2, ypos, xpos+dirX*size/2, ypos+dirY*size/2)
-               line(xpos, ypos+dirY*size/2, xpos+dirX*size/2, ypos+dirY*size/2)
+               if (cutMode === "branch") {
+                  let branchLength = size
+                  let revSize = (biggest+smallest)-size
+                  if (size > (biggest+smallest)/2) branchLength = biggest-(size-smallest)
+                  line(xpos+dirX*size/2, ypos, xpos+dirX*size/2, ypos+dirY*branchLength/2)
+                  line(xpos, ypos+dirY*size/2, xpos+dirX*branchLength/2, ypos+dirY*size/2)
+                  if ((arcQ % 2 === 1) === (cutSide === "start")) {
+                     line(xpos+dirX*biggest/2, ypos+dirY*size/2, xpos+dirX*revSize/2, ypos+dirY*size/2)
+                  } else {
+                     line(xpos+dirX*size/2, ypos+dirY*biggest/2, xpos+dirX*size/2, ypos+dirY*revSize/2)
+                  }
+               } else {
+                  line(xpos+dirX*size/2, ypos, xpos+dirX*size/2, ypos+dirY*size/2)
+                  line(xpos, ypos+dirY*size/2, xpos+dirX*size/2, ypos+dirY*size/2)
+               }
             } else if (shape === "diagonal") {
                const dirX = (arcQ === 2 || arcQ === 3) ? 1:-1
                const dirY = (arcQ === 3 || arcQ === 4) ? 1:-1
@@ -1079,7 +1090,7 @@ function drawStyle (lineNum) {
             const cutX = (arcQ % 2 === 0) === (cutSide === "start")
             if (typeStretchX > 0 && !noStretchX) {
                // check if not cut off
-               if (cutMode === "" || (cutMode!== "" && !cutX)) {
+               if (cutMode === "" || cutMode === "branch" || (cutMode!== "" && !cutX)) {
                   const toSideX = (arcQ === 1 || arcQ === 2) ? -1 : 1
                   let stretchXPos = xpos
                   let stretchYPos = ypos + size*toSideX*0.5
@@ -1100,7 +1111,7 @@ function drawStyle (lineNum) {
             }
             if (typeStretchY > 0 && !noStretchY) {
                // check if not cut off
-               if (cutMode === "" || (cutMode!== "" && cutX)) {
+               if (cutMode === "" || cutMode === "branch" || (cutMode!== "" && cutX)) {
                   const toSideY = (arcQ === 1 || arcQ === 4) ? -1 : 1
                   let stretchXPos = xpos + size*toSideY*0.5
                   let stretchYPos = ypos
@@ -1381,12 +1392,12 @@ function drawStyle (lineNum) {
          case "z":
             verticalOffset += nextOffset
             if (isin(char,["ur"])) {
-               drawCorner("round",ringSizes, 1, 1, nextSpacing, 0, "linecut", "start")
+               drawCorner("round",ringSizes, 1, 2, nextSpacing, 0, "linecut", "start", "flipped")
             } else if (!isin(char,["gap"])) {
-               drawCorner("round",ringSizes, 1, 1, nextSpacing, 0, "roundcut", "start")
+               drawCorner("round",ringSizes, 1, 2, nextSpacing, 0, "roundcut", "start", "flipped")
             } else {
                //can't be reached, do below instead
-               drawCorner("round",ringSizes, 1, 1, nextSpacing, 0)
+               //drawCorner("round",ringSizes, 1, 1, nextSpacing, 0)
             }
             verticalOffset -= nextOffset
             break;
@@ -1396,6 +1407,9 @@ function drawStyle (lineNum) {
                drawCorner("round",ringSizes, 4, 4, nextSpacing, 0, "linecut", "end")
             } else if (char !== "t") {
                drawCorner("round",ringSizes, 4, 4, nextSpacing, 0, "roundcut", "end")
+            }
+            if (!isin(char,["tr", "gap"])) {
+               drawLine(ringSizes, 1, 1, nextSpacing, 0, "h", -weight-1)
             }
             verticalOffset -= nextOffset
             break;
@@ -1565,23 +1579,23 @@ function drawStyle (lineNum) {
             drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
             break;
          case "m":
-            drawCornerFill("round",1, 1, 0, 0)
-            drawCornerFill("square",2, 2, 0, 0)
+            drawCornerFill("diagonal",1, 1, 0, 0)
+            drawCornerFill("diagonal",2, 2, 0, 0)
             drawLineFill(3, 3, 0, 0, "v", 0)
             drawLineFill(4, 4, 0, 0, "v", 0)
 
-            drawCorner("round",ringSizes, 1, 1, 0, 0, "", "")
-            drawCorner("square",ringSizes, 2, 2, 0, 0, "", "")
+            drawCorner("diagonal",ringSizes, 1, 1, 0, 0, "", "")
+            drawCorner("diagonal",ringSizes, 2, 2, 0, 0, "", "")
             drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
             drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
             // SECOND LAYER
-            drawCornerFill("round",2, 1, wideOffset + typeStretchX*2, 0)
-            drawCornerFill("square",1, 2, wideOffset, 0)
+            drawCornerFill("diagonal",2, 1, wideOffset + typeStretchX*2, 0)
+            drawCornerFill("diagonal",1, 2, wideOffset, 0)
             drawLineFill(4, 3, wideOffset, 0, "v", 0)
             drawLineFill(3, 4, wideOffset + typeStretchX*2, 0, "v", 0)
 
-            drawCorner("round",ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "", "", "flipped")
-            drawCorner("square",ringSizes, 1, 2, wideOffset, 0, "", "", "flipped")
+            drawCorner("diagonal",ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "", "", "flipped")
+            drawCorner("diagonal",ringSizes, 1, 2, wideOffset, 0, "", "", "flipped")
             drawLine(ringSizes, 4, 3, wideOffset, 0, "v", 0, undefined, "flipped")
             drawLine(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "v", 0, undefined, "flipped")
             break;
@@ -1659,17 +1673,17 @@ function drawStyle (lineNum) {
                drawCornerFill("diagonal",3, 3, 0, 0)
             }
 
-            drawCorner("diagonal",ringSizes, 1, 2, wideOffset, 0, "", "")
+            drawCorner("diagonal",ringSizes, 1, 2, wideOffset, 0, "", "", "flipped")
             if (nextchar !== "x") {
                if (!isin(nextchar,["gap", "ul"])) {
-                  drawCorner("round",ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "roundcut", "end")
+                  drawCorner("round",ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "roundcut", "end", "flipped")
                } else {
-                  drawCorner("round",ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "linecut", "end", undefined, true)
+                  drawCorner("round",ringSizes, 2, 1, wideOffset+ typeStretchX*2, 0, "linecut", "end", "flipped", true)
                }
             }
-            drawCorner("diagonal",ringSizes, 3, 3, 0, 0, "", "")
+            drawCorner("diagonal",ringSizes, 3, 3, 0, 0, "", "", "flipped")
             if (isin(prevchar,["gap"])) {
-               drawCorner("round",ringSizes, 4, 4, 0, 0, "linecut", "end", undefined, true)
+               drawCorner("round",ringSizes, 4, 4, 0, 0, "linecut", "end", "flipped", true)
             }
             pop()
             break;
@@ -1740,21 +1754,19 @@ function drawStyle (lineNum) {
             }
             drawCornerFill("round",4, 4, 0, 0)
 
-            drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders)
+            if (char === "t") {
+               drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5)
+               drawCorner("square",ringSizes, 1, 1, 0, 0, "branch", "end")
+               if (nextchar !== "z") drawLine(ringSizes, 2, 2, 0, 0, "h", -weight-1)
+            } else {
+               drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders)
+            }
+
             drawCorner("round",ringSizes, 4, 4, 0, 0, "", "")
             if (isin(nextchar,["dl", "gap"])) {
                drawCorner("round",ringSizes, 3, 3, 0, 0, "linecut", "start", undefined, true)
             } else {
                drawCorner("round",ringSizes, 3, 3, 0, 0, "roundcut", "start", undefined, false)
-            }
-
-            // SECOND LAYER
-            if (char === "t") {
-               drawLineFill(1, 1, 0, 0, "h", -typeWeight*0.1) //to not go all the way to the left
-               //drawLineFill(2, 2, 0, 0, "h", 0)
-
-               drawLine(ringSizes, 1, 1, 0, 0, "h", -splitoffset)
-               if (nextchar !== "z") drawLine(ringSizes, 2, 2, 0, 0, "h", -weight-1)
             }
             break;
          case "f":
@@ -1802,7 +1814,7 @@ function drawStyle (lineNum) {
             break;
          case "h":
             drawLineFill(1, 1, 0, 0, "v", ascenders)
-            drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders)
+            drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5)
 
             // SECOND LAYER
             drawCornerFill("square",1, 1, 0, 0)
@@ -1810,7 +1822,7 @@ function drawStyle (lineNum) {
             drawLineFill(3, 3, 0, 0, "v", 0)
             drawLineFill(4, 4, 0, 0, "v", 0)
 
-            drawCorner("square",ringSizes, 1, 1, 0, 0, "", "")
+            drawCorner("square",ringSizes, 1, 1, 0, 0, "branch", "end")
             drawCorner("square",ringSizes, 2, 2, 0, 0, "", "")
             drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
             drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
@@ -1841,6 +1853,7 @@ function drawStyle (lineNum) {
             drawLine(ringSizes, 4, 4, 0, 0, "v", 0, letterOuter*0.5 - (weight+0.5))
             break;
          case "i":
+            drawLineFill(1, 1, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
             drawLineFill(1, 1, 0, 0, "v", 0)
             drawLineFill(4, 4, 0, 0, "v", 0)
 
@@ -1849,7 +1862,10 @@ function drawStyle (lineNum) {
             drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
             break;
          case "j":
-            // WIP missing fills
+            drawLineFill(2, 2, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
+            drawCornerFill("square", 2, 2, 0, 0)
+            drawCornerFill("round", 3, 3, 0, 0)
+
             drawLine(ringSizes, 2, 2, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
             drawCorner("square", ringSizes, 2, 2, 0, 0, "", "")
             drawCorner("round", ringSizes, 3, 3, 0, 0, "", "")
@@ -1857,14 +1873,6 @@ function drawStyle (lineNum) {
                drawLine(ringSizes, 1, 1, 0, 0, "h", 0)
                drawCorner("round", ringSizes, 4, 4, 0, 0, "", "")
             }
-            //drawLineFill(1, 1, 0, 0, "v", 0)
-            //drawLineFill(4, 4, 0, 0, "v", 0)
-            //drawCornerFill("round",3, 4, -letterInner-weight, letterOuter*0.5+extendDownOffset, false, true)
-//
-            //drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5 + 1)
-            //drawLine(ringSizes, 1, 1, 0, 0, "v", 0)
-            //drawLine(ringSizes, 4, 4, 0, 0, "v", extendDownOffset)
-            //drawCorner("round",ringSizes, 3, 4, -letterInner-weight, letterOuter*0.5+extendDownOffset, "", "", undefined, false, false, true)
             break;
          case "z":
             push()
@@ -1875,23 +1883,23 @@ function drawStyle (lineNum) {
 
             drawLine(ringSizes, 2, 2, 0, 0, "h", 1)
             drawCornerFill("diagonal", 1, 2, letterOuter*0.5 + 1, 0)
-            drawCorner("diagonal", ringSizes, 1, 2, letterOuter*0.5 + 1, 0, "", "")
+            drawCorner("diagonal", ringSizes, 1, 2, letterOuter*0.5 + 1, 0, "", "", "flipped")
 
             translate(weight+1,0)
 
-            drawCornerFill("round", 3, 3, 1, 0)
+            drawCornerFill("round", 3, 4, 1, 0)
             if (isin(nextchar,["dl"])) {
-               drawCorner("round",ringSizes, 3, 3, 1, 0, "linecut", "start")
+               drawCorner("round",ringSizes, 3, 4, 1, 0, "linecut", "start")
             } else if (!isin(nextchar,["gap"])) {
-               drawCorner("round",ringSizes, 3, 3, 1, 0, "roundcut", "start")
+               drawCorner("round",ringSizes, 3, 4, 1, 0, "roundcut", "start")
             } else {
-               drawCorner("round",ringSizes, 3, 3, 1, 0, "", "")
+               drawCorner("round",ringSizes, 3, 4, 1, 0, "", "")
             }
 
-            drawCornerFill("diagonal", 3, 4, -letterOuter*0.5, 0)
-            drawCorner("diagonal", ringSizes, 3, 4, -letterOuter*0.5, 0, "", "")
-            drawLineFill(4, 4, 1, 0, "h", 1)
-            drawLine(ringSizes, 4, 4, 1, 0, "h", 1)
+            drawCornerFill("diagonal", 3, 3, -letterOuter*0.5, 0)
+            drawCorner("diagonal", ringSizes, 3, 3, -letterOuter*0.5, 0, "", "", "flipped")
+            drawLineFill(4, 3, 1, 0, "h", 1)
+            drawLine(ringSizes, 4, 3, 1, 0, "h", 1)
             pop()
             break;
          case "-":
@@ -2238,6 +2246,9 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
       case " ":
          offsetSegments = 0
          stretchWidth += typeStretchX * 0
+         break;
+      case "z":
+         offsetSegments = 2
          break;
       default:
          offsetSegments = 1
