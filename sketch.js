@@ -17,6 +17,7 @@ let drawFills = true
 let alignCenter = false
 let strokeGradient = false
 let initialDraw = true
+let gridType = ""
 
 let sliderModes = [
    "size", "rings", "spacing", "xoffset", "yoffset", "xstretch", "ystretch", "weight", "gradient"
@@ -144,6 +145,16 @@ function setup() {
          values.gradient.from = parseInt(valArray[8])
       } else {
          print("Has to be 9 negative or positive numbers with _ in between")
+      }
+   }
+   if (params.grid !== null && params.grid.length > 0) {
+      const gridTypeString = String(params.grid)
+      if (gridTypeString === "v" || gridTypeString === "vertical") {
+         gridType = "vertical"
+      } else if (gridTypeString === "h" || gridTypeString === "horizontal") {
+         gridType = "horizontal"
+      } else if (gridTypeString === "hv" || gridTypeString === "square") {
+         gridType = "grid"
       }
    }
 
@@ -287,6 +298,13 @@ function changeValuesAndURL () {
    }
    if (noMenu) {
       newParams.append("nomenu",true)
+   }
+   if (gridType !== "") {
+      let gridTypeString = ""
+      if (gridType === "vertical") gridTypeString = "v"
+      else if (gridType === "horizontal") gridTypeString = "h"
+      else if (gridType === "grid") gridTypeString = "hv"
+      newParams.append("grid",gridTypeString)
    }
 
    if (URLSearchParams.toString(newParams).length > 0) {
@@ -822,6 +840,11 @@ function drawStyle (lineNum) {
       translate(-typeOffsetX,0)
    }
 
+   // grid
+   if (gridType !== "") {
+      drawGrid(gridType)
+   }
+
    // go through all the letters, but this time to actually draw them
 
    for (let i = 0; i < lineText.length; i++) {
@@ -847,15 +870,13 @@ function drawStyle (lineNum) {
 
       // convenient values
       // per letter
-      const ascenders = max(letterOuter*typeAscenders, 1)
-      const descenders = max(letterOuter*typeAscenders, 1)
+      const ascenders = max(Math.floor(letterOuter*typeAscenders)+((letterOuter%2===0)?0:0), 1)
+      const descenders = max(Math.floor(letterOuter*typeAscenders)+((letterOuter%2===0)?0:0), 1)
       const weight = (letterOuter-letterInner)*0.5
       const oneoffset = (letterOuter>3 && letterInner>2) ? 1 : 0
-      const splitoffset = (weight>0) ? 1 : 0
       const topOffset = (letterOuter < 0) ? -typeOffsetX : 0
       const wideOffset = 0.5*letterOuter + 0.5*letterInner
       const extendOffset = ((letterOuter % 2 == 0) ? 0 : 0.5) + (typeStretchX-(typeStretchX%2))*0.5
-      const extendDownOffset = ((letterOuter % 2 == 0) ? 0 : 0.5)
 
       // determine spacing to the right of character based on both
       const spacingResult = addSpacingBetween(prevchar, char, nextchar, typeSpacing, letterInner, letterOuter, extendOffset)
@@ -962,7 +983,7 @@ function drawStyle (lineNum) {
          // only if corner can be drawn at all
          const smallest = strokeSizes[strokeSizes.length-1]
          const biggest = strokeSizes[0]
-         if (cutMode === "" || cutMode === "branch" || (!(smallest <= 2 || letterOuter+2 <= 2))) {
+         if (cutMode === "" || cutMode === "branch" || !((smallest <= 2 || letterOuter+2 <= 2)&&noSmol)) {
             drawCornerFill(shape,arcQ,offQ,tx,ty,noStretchX,noStretchY)
          }
 
@@ -1289,7 +1310,7 @@ function drawStyle (lineNum) {
          if (debugGridMode) {
             strokeWeightReference = 0.2*(svgMode?appScale:1)
          }
-         const roundStrokeRadius = strokeWeightReference*0.5
+         const roundStrokeRadius = strokeWeightReference*-0.5
 
          // base position
          let xpos = topOffset + charsWidth + (letterOuter/2)
@@ -1307,8 +1328,8 @@ function drawStyle (lineNum) {
          let y1 = ypos
          let y2 = ypos
 
-         const innerPosV = (startFrom !== undefined) ? startFrom : 0
-         const innerPosH = (startFrom !== undefined) ? startFrom : 0
+         const innerPosV = (startFrom !== undefined) ? startFrom - roundStrokeRadius: 0
+         const innerPosH = (startFrom !== undefined) ? startFrom - roundStrokeRadius: 0
 
          if (axis === "v") {
             const toSideX = (arcQ === 1 || arcQ === 4) ? -0.5 : 0.5
@@ -1358,7 +1379,6 @@ function drawStyle (lineNum) {
          }
          pop()
       }
-
 
       // DESCRIBING THE FILLED BACKGROUND SHAPES AND LINES OF EACH LETTER
 
@@ -1435,12 +1455,12 @@ function drawStyle (lineNum) {
                break;
             case "j":
                verticalOffset += nextOffset
-               if (isin(char,["dr"]) || "".includes(char)) {
+               if (isin(char,["dr"]) || "r".includes(char)) {
                   drawCorner("round",ringSizes, 4, 4, nextSpacing, 0, "linecut", "end")
-               } else if (char !== "t") {
+               } else if (!"tk".includes(char)) {
                   drawCorner("round",ringSizes, 4, 4, nextSpacing, 0, "roundcut", "end")
                }
-               if (!isin(char,["tr", "gap"])) {
+               if (!isin(char,["tr", "gap"]) && !"ckrsx".includes(char)) {
                   drawLine(ringSizes, 1, 1, nextSpacing, 0, "h", -weight-1)
                }
                verticalOffset -= nextOffset
@@ -1524,7 +1544,7 @@ function drawStyle (lineNum) {
                drawCorner("round",ringSizes, 4, 4, 0, 0, "", "")
 
                // SECOND LAYER
-               if (isin(nextchar,["gap"]) || "sz".includes(nextchar)) {
+               if (isin(nextchar,["gap"]) || "gsz".includes(nextchar)) {
                   drawLine(ringSizes, 3, 3, 0, 0, "h", 0)
                } else if (!isin(nextchar,["dl", "gap"]) && letterInner <= 2) {
                   drawLine(ringSizes, 3, 3, 0, 0, "h", letterOuter*0.5 + typeStretchX)
@@ -1675,7 +1695,7 @@ function drawStyle (lineNum) {
             case "t":
 
                if (char === "t") {
-                  drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5)
+                  drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders)
                   drawCorner("square",ringSizes, 1, 1, 0, 0, "branch", "end")
                   if (nextchar !== "z") {
                      if (isin(nextchar,["ul", "gap"]) || letterInner > 2) {
@@ -1702,8 +1722,8 @@ function drawStyle (lineNum) {
                } else {
                   drawCorner("round",ringSizes, 2, 2, 0, 0, "roundcut", "end", undefined, false)
                }
+               drawLine(ringSizes, 4, 4, 0, 0, "v", descenders)
                drawCorner("square", ringSizes, 4, 4, 0, 0, "branch", "start")
-               drawLine(ringSizes, 4, 4, 0, 0, "v", descenders, letterOuter*0.5)
 
                // SECOND LAYER
                if (!"sx".includes(nextchar)) {
@@ -1731,7 +1751,7 @@ function drawStyle (lineNum) {
                }
                break;
             case "h":
-               drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, letterOuter*0.5)
+               drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders, 0)
 
                // SECOND LAYER
                drawCorner("square",ringSizes, 1, 1, 0, 0, "branch", "end")
@@ -1813,28 +1833,35 @@ function drawStyle (lineNum) {
    lineColor = oldLineColor
 
    const height = typeSize + Math.abs(typeOffsetY) + typeStretchY
-   const asc = typeAscenders*typeSize
-   const desc = typeAscenders*typeSize + 1
+   const asc = max(Math.floor(typeSize*typeAscenders)+((typeSize%2===0)?0:0), 1)
+   const desc = asc
+
    if (typeSpacingY !== undefined) {
       startOffsetY += height+typeSpacingY
       totalHeight[lineNum] = height +typeSpacingY
    } else {
-      startOffsetY += height + asc + desc
-      totalHeight[lineNum] = height + asc + desc
+      startOffsetY += height + asc + desc + 1
+      totalHeight[lineNum] = height + asc + desc + 1
    }
+
+   if (debugGridMode) {
+      drawGrid("debug")
+   }
+
+   function drawGrid (type) {
+      const height = typeSize + Math.abs(typeOffsetY) + typeStretchY
+      const asc = max(Math.floor(typeSize*typeAscenders)+((typeSize%2===0)?0:0), 1)
+
+      if (type === "debug" && !printMode) {
+         lineColor.setAlpha(40)
+         stroke(lineColor)
+         strokeWeight(0.2*(svgMode?appScale:1))
    
+         const i = lineNum * totalHeight[lineNum] - typeSize/2
+         if (typeOffsetX<0) {
+            translate(typeOffsetX,0)
+         }
 
-   if (!printMode) {
-      lineColor.setAlpha(40)
-      stroke(lineColor)
-      strokeWeight(0.2*(svgMode?appScale:1))
-
-      const i = lineNum * totalHeight[lineNum] - typeSize/2
-      if (typeOffsetX<0) {
-         translate(typeOffsetX,0)
-      }
-
-      if (debugGridMode) {
          //vertical gridlines
          line(0, i, totalWidth[lineNum], i)
          line(0, i+height, totalWidth[lineNum], i+height)
@@ -1842,20 +1869,40 @@ function drawStyle (lineNum) {
          line(0, i+height/2-typeOffsetY*0.5, totalWidth[lineNum], i+height/2-typeOffsetY*0.5)
          line(0, i+height/2+typeOffsetY*0.5, totalWidth[lineNum], i+height/2+typeOffsetY*0.5)
          line(0, i+height+asc, totalWidth[lineNum], i+height+asc)
-
+   
          //horizontal gridlines
          push()
          translate(0,i+height*0.5)
          for (let j = 0; j <= totalWidth[lineNum]; j++) {
-            line(j, -height/2-typeAscenders*typeSize, j, height/2+typeAscenders*typeSize)
+            line(j, -height/2-asc, j, height/2+asc)
+         }
+         pop()
+      } else if (!debugGridMode){
+         stroke(lineColor)
+         strokeWeight((typeWeight/10)*1*(svgMode?appScale:1))
+         const i = lineNum * totalHeight[lineNum] - typeSize/2
+         push()
+         translate(0,i+height*0.5)
+         if (typeOffsetX<0) {
+            translate(typeOffsetX,0)
+         }
+         if (type === "vertical" || type === "grid") {
+            for (let j = 0; j <= totalWidth[lineNum]; j++) {
+               line(j, -height/2-asc, j, height/2+asc)
+            }
+         }
+         if (type === "horizontal" || type === "grid") {
+            let middleLine = (typeSize % 2 === 0) ? 0 : 0.5
+            for (let k = middleLine; k <= totalHeight[lineNum]/2; k++) {
+               line(0, k, totalWidth[lineNum], k)
+               line(0, -k, totalWidth[lineNum], -k)
+            }
          }
          pop()
       }
+      bgColor.setAlpha(255)
+      lineColor.setAlpha(255)
    }
-   pop()
-
-   bgColor.setAlpha(255)
-   lineColor.setAlpha(255)
 }
 
 
