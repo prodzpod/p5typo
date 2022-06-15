@@ -1186,7 +1186,7 @@ function drawStyle (lineNum) {
          pop()
       }
 
-      function drawLine (strokeSizes, arcQ, offQ, tx, ty, axis, extension, startFrom, flipped) {
+      function drawLine (strokeSizes, arcQ, offQ, tx, ty, axis, extension, startFrom, flipped, maxWeight) {
          //first, draw the fill
          drawLineFill(arcQ, offQ, tx, ty, axis, extension, startFrom)
 
@@ -1221,6 +1221,7 @@ function drawStyle (lineNum) {
 
          function draw() {
             strokeSizes.forEach((size) => {
+               if (biggest/2-size/2 > maxWeight) return
                if (strokeGradient && !debugGridMode) {
                   strokeWeight((typeWeight/10)*(svgMode?appScale:1)*map(size,smallest,biggest,0.3,1))
                }
@@ -1504,17 +1505,8 @@ function drawStyle (lineNum) {
                // if only one ring, move line down so there is a gap
                const extragap = (letterOuter > letterInner) ? 0:1
 
-               // if weight is larger than desc height, remove enough rings here so that it's
-               //const descRings = ringSizes.slice()
-               //for (let r = 0; r < descRings.length; r++) {
-               //   const height = (descRings[r]-ringSizes[ringSizes.length-1])/2
-               //   if (height > descenders) {
-               //      descRings[r] = Math.floor(descenders*2)
-               //   }
-               //}
-
-               drawLine(ringSizes, 3, 3, 0, weight + extragap, "h", 0)
-               drawLine(ringSizes, 4, 4, 0, weight + extragap, "h", 0)
+               drawLine(ringSizes, 2, 3, 0, letterOuter + extragap, "h", 0, undefined, false, descenders)
+               drawLine(ringSizes, 1, 4, 0, letterOuter + extragap, "h", 0, undefined, false, descenders)
 
                drawCorner("round",ringSizes, 3, 3, 0, 0, "", "")
                drawCorner("round",ringSizes, 4, 4, 0, 0, "", "")
