@@ -1288,6 +1288,11 @@ function drawStyle (lineNum) {
                   }
                }
                line(x1, y1, x2, y2)
+               //only draw the non-stretch part if it is long enough to be visible
+               //if ((axis === "v") && (Math.abs(y1-y2))>0 || 
+               //      (axis === "h") && (Math.abs(x1-x2))>0) {
+               //   line(x1, y1, x2, y2)
+               //}
             });
          }
 
@@ -1339,7 +1344,10 @@ function drawStyle (lineNum) {
             const dirY = (arcQ === 1 || arcQ === 2) ? -1 : 1
             y1 += innerPosV * dirY
             y2 += (letterOuter*0.5 + extension + roundStrokeRadius) * dirY
-            line(x1, y1, x2, y2)
+            //only draw the non-stretch part if it is long enough to be visible
+            if (dirY*(y2-y1)>0.1) {
+               line(x1, y1, x2, y2)
+            }
             if (innerPosV === 0) {
                //stretch
                stroke((debugGridMode)? color("#367"): bgColor)
@@ -1361,7 +1369,10 @@ function drawStyle (lineNum) {
             const dirX = (arcQ === 1 || arcQ === 4) ? -1 : 1
             x1 += innerPosH * dirX
             x2 += (letterOuter*0.5 + extension + roundStrokeRadius) * dirX
-            line(x1, y1, x2, y2)
+            //only draw the non-stretch part if it is long enough to be visible
+            if (dirX*(x2-x1)>0.1) {
+               line(x1, y1, x2, y2)
+            }
             if (innerPosH === 0) {
                //stretch
                stroke((debugGridMode)? color("#891"): bgColor)
@@ -1536,7 +1547,9 @@ function drawStyle (lineNum) {
                drawCorner("round",ringSizes, 4, 4, 0, 0, "", "")
 
                // SECOND LAYER
-               if (isin(nextchar,["gap"]) || "gsz".includes(nextchar)) {
+               if ("s".includes(nextchar)) {
+                  drawLine(ringSizes, 3, 3, 0, 0, "h", 1)
+               } else if (isin(nextchar,["gap"]) || "gz".includes(nextchar)) {
                   drawLine(ringSizes, 3, 3, 0, 0, "h", 0)
                } else if (!isin(nextchar,["dl", "gap"]) && letterInner <= 2) {
                   drawLine(ringSizes, 3, 3, 0, 0, "h", letterOuter*0.5 + typeStretchX)
@@ -1689,7 +1702,7 @@ function drawStyle (lineNum) {
                if (char === "t") {
                   drawLine(ringSizes, 1, 1, 0, 0, "v", ascenders)
                   drawCorner("square",ringSizes, 1, 1, 0, 0, "branch", "end")
-                  if (nextchar !== "z") {
+                  if (!"zx".includes(nextchar)) {
                      if (isin(nextchar,["ul", "gap"]) || letterInner > 2) {
                         drawLine(ringSizes, 2, 2, 0, 0, "h", -weight-1)
                      } else {
@@ -1907,6 +1920,7 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
 
    // negative spacing can't go past width of lines
    spacing = max(spacing, -weight)
+   let optionalGap = (inner > 1) ? 1 : 0
 
    // spacing is used between letters that don't make a special ligature
    // some letters force a minimum spacing
@@ -1940,7 +1954,7 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
          if (!altS) {
             charWidth = weight*3 + inner*2
             if (isin(nextchar,["gap", "ul"])) {
-               charWidth += -0.5*outer +1
+               charWidth += -0.5*outer + optionalGap
             }
             if (isin(prevchar,["gap", "dr"])) {
                charWidth += -0.5*outer
@@ -1978,7 +1992,7 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
    if ("ktlcrfsx-".includes(char) && isin(nextchar,["gap"])) {
       charWidth -= 1
    }
-   // 1 less space in front of xyj
+   // 1 less space in front of xsj
    if ("xsj-".includes(nextchar) && isin(char,["gap"])) {
       charWidth -= 1
    }
@@ -2056,8 +2070,9 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
                } else {
                   if ("e".includes(char)) {
                      beforeConnect = true
+                     spaceBefore = optionalGap
                   } else {
-                     minSpaceBefore = 1
+                     minSpaceBefore = optionalGap
                   }
                }
             } else {
