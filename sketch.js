@@ -59,7 +59,7 @@ let themeDark
 let themeLight
 let typeSpacingY = undefined//5*0.25 +1
 
-let linesArray = ["hamburgefonstiv", "", "", ""]
+let linesArray = ["hamburgefonstiv", "", "", "", ""]
 let currentLine = 0
 const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!?-_ "
 
@@ -113,17 +113,20 @@ function setup() {
       print("Loaded with URL Mode: Menu Hidden")
    }
    if (params.line1 !== null && params.line1.length > 0) {
-      if (params.line4 !== null && params.line3 !== null && params.line2 !== null) {
-         linesArray = [params.line1, params.line2, params.line3, params.line4]
+      if (params.line5 !== null && params.line4 !== null && params.line3 !== null && params.line2 !== null) {
+         linesArray = [params.line1, params.line2, params.line3, params.line4, params.line5]
+         currentLine = 4
+      } else if (params.line4 !== null && params.line3 !== null && params.line2 !== null) {
+         linesArray = [params.line1, params.line2, params.line3, params.line4, ""]
          currentLine = 3
       } else if (params.line3 !== null && params.line2 !== null) {
-         linesArray = [params.line1, params.line2, params.line3, ""]
+         linesArray = [params.line1, params.line2, params.line3, "", ""]
          currentLine = 2
       } else if (params.line2 !== null) {
-         linesArray = [params.line1, params.line2, "", ""]
+         linesArray = [params.line1, params.line2, "", "", ""]
          currentLine = 1
       } else {
-         linesArray = [params.line1, "", "", ""]
+         linesArray = [params.line1, "", "", "", ""]
          currentLine = 0
       }
       print("Loaded with URL Text")
@@ -270,6 +273,9 @@ function changeValuesAndURL () {
    if (currentLine > 2) {
       newParams.append("line4",linesArray[3])
    }
+   if (currentLine > 3) {
+      newParams.append("line5", linesArray[4])
+   }
 
    // add other parameters afterwards
    if (svgMode) {
@@ -378,7 +384,7 @@ function keyTyped() {
       return
    }
    else if (key === "9") {
-      linesArray = ["","","",""]
+      linesArray = ["","","","", ""]
       currentLine = 0
       changeValuesAndURL()
       return
@@ -741,6 +747,7 @@ function drawElements() {
    for (let i = 0; i <= currentLine; i++) {
       drawStyle(i)
    }
+   pop()
    pop()
 }
 
