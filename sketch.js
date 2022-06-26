@@ -2,6 +2,7 @@
 
 let cnv
 let svgMode = false
+let webglMode = false
 let startOffsetY
 
 let bgColor
@@ -26,9 +27,10 @@ let sliderMode = 0
 let sliderChange = 0
 let waveMode = false
 
-let appScale = 10
-let totalWidth = [0, 0, 0, 0]
-let totalHeight = [0, 0, 0, 0]
+const appScale = 10
+let strokeScaleFactor = 1
+const totalWidth = [0, 0, 0, 0]
+const totalHeight = [0, 0, 0, 0]
 
 let values = {
    colorDark: {from: undefined, to: undefined, lerp: 0},
@@ -65,6 +67,7 @@ const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!?-_ "
 
 // use alt letters?
 let altS = false
+let altM = false
 
 function windowResized() {
    if (!noMenu) {
@@ -72,13 +75,17 @@ function windowResized() {
    }
 }
 
-function setup() {
+function setup () {
    const params = new Proxy(new URLSearchParams(window.location.search), {
       get: (searchParams, prop) => searchParams.get(prop),
     });
    if (params.svg === "true" || params.svg === "1") {
       svgMode = true
       print("Loaded with URL Mode: SVG")
+   }
+   if (params.webgl === "true" || params.webgl === "1") {
+      webglMode = true
+      print("Loaded with URL Mode: WEBGL")
    }
    if (params.wave === "true" || params.wave === "1") {
       waveMode = true
@@ -161,11 +168,19 @@ function setup() {
       }
    }
 
-   cnv = createCanvas(windowWidth-10, windowHeight-10,(svgMode)?SVG:"")
-   strokeCap(ROUND)
+   cnv = createCanvas(windowWidth-10, windowHeight-10,(webglMode)?WEBGL:(svgMode)?SVG:"")
+   if (!webglMode) {
+      strokeCap(ROUND)
+      textFont("Courier Mono")
+      frameRate(60)
+      if (svgMode) strokeScaleFactor = appScale
+   } else {
+      frameRate(60)
+      strokeScaleFactor = appScale
+   }
    rectMode(CORNERS)
-   textFont("Courier Mono")
-   frameRate(60)
+   
+   
 
    values.colorDark.from = color("#16111F")
    values.colorLight.from = color("#C4B6FF")
@@ -280,6 +295,9 @@ function changeValuesAndURL () {
    // add other parameters afterwards
    if (svgMode) {
       newParams.append("svg",true)
+   }
+   if (webglMode) {
+      newParams.append("webgl",true)
    }
    if (!darkMode) {
       newParams.append("invert",true)
@@ -545,7 +563,12 @@ function draw () {
    }
 
    background(bgColor)
-   strokeWeight(0.3*(svgMode?appScale:1))
+   if (webglMode) {
+      orbitControl()
+      ambientLight(60, 60, 60);
+      pointLight(255, 255, 255, 0, 0, 100);
+   } 
+   strokeWeight(0.3*strokeScaleFactor)
 
    drawElements()
 
@@ -570,11 +593,12 @@ function draw () {
 
 function drawElements() {
    push()
+   if (webglMode) translate(-width/2, -height/2)
    scale(appScale)
    if (noMenu) translate(1,1)
    else translate(6, 6)
 
-   if (!noMenu) {
+   if (!noMenu && !webglMode) {
       textSize(2)
       noStroke()
       fill(lineColor)
@@ -705,12 +729,6 @@ function drawElements() {
       text("clear text   ", col4, 0); translate(0,2)
       pop()
    
-   
-      //stroke(lineColor)
-      //strokeWeight(0.2)
-      //line(col5-1, -1.5, col5-1, 2.5)
-      //noStroke()
-   
       push()
       for (let i = 0; i < linesArray.length; i++) {
          const line = (linesArray[i].length>0) ? linesArray[i] : ".".repeat(9)
@@ -728,7 +746,7 @@ function drawElements() {
    }
    translate(0, max(typeSize*typeAscenders, 1))
 
-   strokeWeight((typeWeight/10)*(svgMode?appScale:1))
+   strokeWeight((typeWeight/10)*strokeScaleFactor)
    lineColor.setAlpha(255)
 
    startOffsetY = 0
@@ -900,7 +918,7 @@ function drawStyle (lineNum) {
          noFill()
          stroke((debugGridMode)? color("#52A"): bgColor)
          strokeCap(SQUARE)
-         strokeWeight(weight*(svgMode?appScale:1))
+         strokeWeight(weight*strokeScaleFactor)
 
          const smallest = letterInner
          const size = smallest + weight
@@ -923,7 +941,7 @@ function drawStyle (lineNum) {
             // angles
             let startAngle = PI + (arcQ-1)*HALF_PI
             let endAngle = startAngle + HALF_PI
-            arc(xpos, ypos, size, size, startAngle, endAngle)
+            arcType(xpos, ypos, size, size, startAngle, endAngle)
          } else if (shape === "square") {
             const dirX = (arcQ === 2 || arcQ === 3) ? 1:-1
             const dirY = (arcQ === 3 || arcQ === 4) ? 1:-1
@@ -961,7 +979,7 @@ function drawStyle (lineNum) {
                offsetShift = (typeOffsetY/2)*stairDir
             }
 
-            line(stretchXPos, stretchYPos+offsetShift,
+           lineType(stretchXPos, stretchYPos+offsetShift,
                stretchXPos + dirX*0.5*typeStretchX, stretchYPos+offsetShift)
          }
          if (typeStretchY > 0 && !noStretchY) {
@@ -979,7 +997,7 @@ function drawStyle (lineNum) {
                offsetShift = typeOffsetX/2*dirY
             }
 
-            line(stretchXPos+offsetShift, stretchYPos,
+           lineType(stretchXPos+offsetShift, stretchYPos,
                stretchXPos+offsetShift, stretchYPos + dirY*0.5*typeStretchY)
          }
          pop()
@@ -991,8 +1009,10 @@ function drawStyle (lineNum) {
          const smallest = strokeSizes[strokeSizes.length-1]
          const biggest = strokeSizes[0]
          //drawCornerFill(shape,arcQ,offQ,tx,ty,noSmol,noStretchX,noStretchY)
-         if (cutMode === "" || cutMode === "branch" || !((smallest <= 2 || letterOuter+2 <= 2)&&noSmol)) {
-            drawCornerFill(shape,arcQ,offQ,tx,ty,noSmol,noStretchX,noStretchY)
+         if (!webglMode) {
+            if (cutMode === "" || cutMode === "branch" || !((smallest <= 2 || letterOuter+2 <= 2)&&noSmol)) {
+               drawCornerFill(shape,arcQ,offQ,tx,ty,noSmol,noStretchX,noStretchY)
+            }
          }
 
          push()
@@ -1004,13 +1024,13 @@ function drawStyle (lineNum) {
          // if (true) {
          //    innerColor = color("green")
          //    outerColor = color("lime")
-         //    strokeWeight((typeWeight/5)*(svgMode?appScale:1))
+         //    strokeWeight((typeWeight/5)*strokeScaleFactor)
          //    draw()
          // }
 
-         strokeWeight((typeWeight/10)*(svgMode?appScale:1))
+         strokeWeight((typeWeight/10)*strokeScaleFactor)
          if (debugGridMode) {
-            strokeWeight(0.2*(svgMode?appScale:1))
+            strokeWeight(0.2*strokeScaleFactor)
          }
          innerColor = (debugGridMode)? color("orange"): lerpColor(lineColor,bgColor,typeGradient/10)
          outerColor = lineColor
@@ -1062,7 +1082,7 @@ function drawStyle (lineNum) {
                   //endAngle = startAngle + (endAngle-startAngle) * Math.abs(((frameCount % 60) /30)-1)
 
                   if (drawCurve) {
-                     arc(basePos.x,basePos.y,size,size,startAngle,endAngle)
+                     arcType(basePos.x,basePos.y,size,size,startAngle,endAngle)
                   } else {
                      // draw 0.5 long lines instead
                      // wip
@@ -1074,16 +1094,16 @@ function drawStyle (lineNum) {
                      let branchLength = size
                      let revSize = (biggest+smallest)-size
                      if (size > (biggest+smallest)/2) branchLength = biggest-(size-smallest)
-                     line(xpos+dirX*size/2, ypos, xpos+dirX*size/2, ypos+dirY*branchLength/2)
-                     line(xpos, ypos+dirY*size/2, xpos+dirX*branchLength/2, ypos+dirY*size/2)
+                    lineType(xpos+dirX*size/2, ypos, xpos+dirX*size/2, ypos+dirY*branchLength/2)
+                    lineType(xpos, ypos+dirY*size/2, xpos+dirX*branchLength/2, ypos+dirY*size/2)
                      if ((arcQ % 2 === 1) === (cutSide === "start")) {
-                        line(xpos+dirX*biggest/2, ypos+dirY*size/2, xpos+dirX*revSize/2, ypos+dirY*size/2)
+                       lineType(xpos+dirX*biggest/2, ypos+dirY*size/2, xpos+dirX*revSize/2, ypos+dirY*size/2)
                      } else {
-                        line(xpos+dirX*size/2, ypos+dirY*biggest/2, xpos+dirX*size/2, ypos+dirY*revSize/2)
+                       lineType(xpos+dirX*size/2, ypos+dirY*biggest/2, xpos+dirX*size/2, ypos+dirY*revSize/2)
                      }
                   } else {
-                     line(xpos+dirX*size/2, ypos, xpos+dirX*size/2, ypos+dirY*size/2)
-                     line(xpos, ypos+dirY*size/2, xpos+dirX*size/2, ypos+dirY*size/2)
+                    lineType(xpos+dirX*size/2, ypos, xpos+dirX*size/2, ypos+dirY*size/2)
+                    lineType(xpos, ypos+dirY*size/2, xpos+dirX*size/2, ypos+dirY*size/2)
                   }
                } else if (shape === "diagonal") {
                   const dirX = (arcQ === 2 || arcQ === 3) ? 1:-1
@@ -1103,18 +1123,18 @@ function drawStyle (lineNum) {
                      if (changeAxis === "x") {
                         xPoint.x = xpos+dirX*(biggest/2 -weight -1)
                         xPoint.y = yPoint.y - (biggest/2 - weight -1) + dirY*stepslope
-                        line(xpos, yPoint.y, yPoint.x, yPoint.y)
+                       lineType(xpos, yPoint.y, yPoint.x, yPoint.y)
                      } else if (changeAxis === "y") {
                         yPoint.y = ypos+dirY*(biggest/2 -weight -1)
                         yPoint.x = xPoint.x - (biggest/2 - weight -1) + dirX*stepslope
-                        line(xPoint.x, ypos, xPoint.x, xPoint.y)
+                       lineType(xPoint.x, ypos, xPoint.x, xPoint.y)
                      }
-                     line(xPoint.x, xPoint.y, yPoint.x, yPoint.y)
+                    lineType(xPoint.x, xPoint.y, yPoint.x, yPoint.y)
                   } else {
-                     line(xPoint.x, xPoint.y, yPoint.x, yPoint.y)
+                    lineType(xPoint.x, xPoint.y, yPoint.x, yPoint.y)
                      if (step > 0) {
-                        line(xPoint.x, ypos, xPoint.x, xPoint.y)
-                        line(xpos, yPoint.y, yPoint.x, yPoint.y)
+                       lineType(xPoint.x, ypos, xPoint.x, xPoint.y)
+                       lineType(xpos, yPoint.y, yPoint.x, yPoint.y)
                      }
                   }
                }
@@ -1137,7 +1157,7 @@ function drawStyle (lineNum) {
                         offsetShift = (typeOffsetY/2)*stairDir
                      }
 
-                     line(stretchXPos, stretchYPos+offsetShift,
+                    lineType(stretchXPos, stretchYPos+offsetShift,
                         stretchXPos + dirX*0.5*typeStretchX, stretchYPos+offsetShift)
                   }
                }
@@ -1164,7 +1184,7 @@ function drawStyle (lineNum) {
                         offsetShift = typeOffsetX/2*dirY
                      }
 
-                     line(stretchXPos+offsetShift, stretchYPos,
+                    lineType(stretchXPos+offsetShift, stretchYPos,
                         stretchXPos+offsetShift, stretchYPos + dirY*0.5*typeStretchY)
                   }
                }
@@ -1174,7 +1194,7 @@ function drawStyle (lineNum) {
                   let extendXPos = xpos
                   let extendYPos = ypos + size*toSideX*0.5
                   const dirX = (arcQ === 1 || arcQ === 4) ? 1 : -1
-                  line(extendXPos, extendYPos, extendXPos + dirX*extendamount, extendYPos)
+                 lineType(extendXPos, extendYPos, extendXPos + dirX*extendamount, extendYPos)
                }
             });
          }
@@ -1184,7 +1204,9 @@ function drawStyle (lineNum) {
 
       function drawLine (strokeSizes, arcQ, offQ, tx, ty, axis, extension, startFrom, flipped, maxWeight) {
          //first, draw the fill
-         drawLineFill(strokeSizes, arcQ, offQ, tx, ty, axis, extension, startFrom)
+         if (!webglMode) {
+            drawLineFill(strokeSizes, arcQ, offQ, tx, ty, axis, extension, startFrom)
+         }
 
          push()
          translate(tx, ty)
@@ -1198,13 +1220,13 @@ function drawStyle (lineNum) {
          //if (true) {
          //   innerColor = color("green")
          //   outerColor = color("lime")
-         //   strokeWeight((typeWeight/5)*(svgMode?appScale:1))
+         //   strokeWeight((typeWeight/5)*strokeScaleFactor)
          //   draw()
          //}
 
-         strokeWeight((typeWeight/10)*(svgMode?appScale:1))
+         strokeWeight((typeWeight/10)*strokeScaleFactor)
          if (debugGridMode) {
-            strokeWeight(0.2*(svgMode?appScale:1))
+            strokeWeight(0.2*strokeScaleFactor)
          }
          innerColor = (debugGridMode)? color("lime"): lerpColor(lineColor,bgColor,typeGradient/10)
          outerColor = lineColor
@@ -1239,7 +1261,7 @@ function drawStyle (lineNum) {
                   y2 += (letterOuter*0.5 + extension + outerExt) * dirY
                   //only draw the non-stretch part if it is long enough to be visible
                   if (dirY*(y2-y1)>=0) {
-                     line(x1, y1, x2, y2)
+                    lineType(x1, y1, x2, y2)
                   }
                   if (typeStretchY !== 0 && innerPosV === 0) {
                      //stretch
@@ -1250,7 +1272,7 @@ function drawStyle (lineNum) {
                      } else if (Math.abs(typeOffsetX) >1 && Math.abs(typeOffsetX)<3) {
                         offsetShift = typeOffsetX/2*dirY
                      }
-                     line(x1-offsetShift, y1-typeStretchY*0.5*dirY, x2-offsetShift, y1)
+                    lineType(x1-offsetShift, y1-typeStretchY*0.5*dirY, x2-offsetShift, y1)
                   }
                } else if (axis === "h") {
                   const toSideY = (arcQ === 1 || arcQ === 2) ? -1 : 1
@@ -1261,7 +1283,7 @@ function drawStyle (lineNum) {
                   x2 += (letterOuter*0.5 + extension) * dirX
                   //only draw the non-stretch part if it is long enough to be visible
                   if (dirX*(x2-x1)>=0) {
-                     line(x1, y1, x2, y2)
+                    lineType(x1, y1, x2, y2)
                   }
                   if (typeStretchX !== 0 && innerPosH === 0) {
                      //stretch
@@ -1273,7 +1295,7 @@ function drawStyle (lineNum) {
                      } else if (Math.abs(typeOffsetY) >1 && Math.abs(typeOffsetY)<3) {
                         offsetShift = (typeOffsetY/2)*stairDir
                      }
-                     line(x1-typeStretchX*0.5*dirX, y1+offsetShift, x1, y2+offsetShift)
+                    lineType(x1-typeStretchX*0.5*dirX, y1+offsetShift, x1, y2+offsetShift)
                   }
                }
             });
@@ -1291,7 +1313,7 @@ function drawStyle (lineNum) {
          translate(tx, ty)
          noFill()
          stroke((debugGridMode)? color("#462"): bgColor)
-         strokeWeight(weight*(svgMode?appScale:1))
+         strokeWeight(weight*strokeScaleFactor)
          strokeCap(SQUARE)
 
          const size = strokeSizes[0]
@@ -1301,7 +1323,7 @@ function drawStyle (lineNum) {
          // to make the rectangles a little longer at the end
          let strokeWeightReference = (typeWeight/10)
          if (debugGridMode) {
-            strokeWeightReference = 0.2*(svgMode?appScale:1)
+            strokeWeightReference = 0.2*strokeScaleFactor
          }
          const outerExt = strokeWeightReference*-0.5
 
@@ -1327,7 +1349,7 @@ function drawStyle (lineNum) {
             y2 += (letterOuter*0.5 + extension + outerExt) * dirY
             //only draw the non-stretch part if it is long enough to be visible
             if (dirY*(y2-y1)>0.1) {
-               line(x1, y1, x2, y2)
+              lineType(x1, y1, x2, y2)
             }
             if (typeStretchY !== 0 && innerPosV === 0) {
                //stretch
@@ -1340,7 +1362,7 @@ function drawStyle (lineNum) {
                }
 
                stroke((debugGridMode)? color("#367"): bgColor)
-               line(x1-offsetShift, y1-typeStretchY*0.5*dirY, x2-offsetShift, y1)
+              lineType(x1-offsetShift, y1-typeStretchY*0.5*dirY, x2-offsetShift, y1)
             }
          } else if (axis === "h") {
             const toSideY = (arcQ === 1 || arcQ === 2) ? -0.5 : 0.5
@@ -1351,7 +1373,7 @@ function drawStyle (lineNum) {
             x2 += (letterOuter*0.5 + extension + outerExt) * dirX
             //only draw the non-stretch part if it is long enough to be visible
             if (dirX*(x2-x1)>0.1) {
-               line(x1, y1, x2, y2)
+              lineType(x1, y1, x2, y2)
             }
             if (typeStretchX !== 0 && innerPosH === 0) {
                //stretch
@@ -1366,7 +1388,7 @@ function drawStyle (lineNum) {
                }
 
                stroke((debugGridMode)? color("#891"): bgColor)
-               line(x1-typeStretchX*0.5*dirX, y1+offsetShift, x1, y2+offsetShift)
+              lineType(x1-typeStretchX*0.5*dirX, y1+offsetShift, x1, y2+offsetShift)
             }
          }
          pop()
@@ -1375,9 +1397,9 @@ function drawStyle (lineNum) {
       function strokeStyleForRing(size, smallest, biggest, innerColor, outerColor, flipped, arcQ, offQ) {
          //strokeweight
          if (strokeGradient && !debugGridMode) {
-            strokeWeight((typeWeight/10)*(svgMode?appScale:1)*map(size,smallest,biggest,0.3,1))
+            strokeWeight((typeWeight/10)*strokeScaleFactor*map(size,smallest,biggest,0.3,1))
             if ((arcQ !== offQ) !== (flipped === "flipped")) {
-               strokeWeight((typeWeight/10)*(svgMode?appScale:1)*map(size,smallest,biggest,1,10.3))
+               strokeWeight((typeWeight/10)*strokeScaleFactor*map(size,smallest,biggest,1,10.3))
             }
          }
 
@@ -1607,15 +1629,28 @@ function drawStyle (lineNum) {
                drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
                break;
             case "m":
-               drawCorner("square",ringSizes, 1, 1, 0, 0, "", "")
-               drawCorner("square",ringSizes, 2, 2, 0, 0, "", "")
-               drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
-               drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
-               // SECOND LAYER
-               drawCorner("square",ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "", "", "flipped")
-               drawCorner("square",ringSizes, 1, 2, wideOffset, 0, "branch", "start", "flipped")
-               drawLine(ringSizes, 4, 3, wideOffset, 0, "v", 0, undefined, "flipped")
-               drawLine(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "v", 0, undefined, "flipped")
+               if (altM) {
+                  drawCorner("square",ringSizes, 1, 1, 0, 0, "", "")
+                  drawCorner("square",ringSizes, 2, 2, 0, 0, "", "")
+                  drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
+                  drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
+                  // SECOND LAYER
+                  drawCorner("square",ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "", "", "flipped")
+                  drawCorner("square",ringSizes, 1, 2, wideOffset, 0, "branch", "start", "flipped")
+                  drawLine(ringSizes, 4, 3, wideOffset, 0, "v", 0, undefined, "flipped")
+                  drawLine(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "v", 0, undefined, "flipped")
+               } else {
+                  drawCorner("diagonal",ringSizes, 1, 1, 0, 0, "", "")
+                  drawCorner("diagonal",ringSizes, 2, 2, 0, 0, "", "")
+                  drawLine(ringSizes, 3, 3, 0, 0, "v", 0)
+                  drawLine(ringSizes, 4, 4, 0, 0, "v", 0)
+                  // SECOND LAYER
+                  drawCorner("diagonal",ringSizes, 2, 1, wideOffset + typeStretchX*2, 0, "", "", "flipped")
+                  drawCorner("diagonal",ringSizes, 1, 2, wideOffset, 0, "", "", "flipped")
+                  drawLine(ringSizes, 4, 3, wideOffset, 0, "v", 0, undefined, "flipped")
+                  drawLine(ringSizes, 3, 4, wideOffset + typeStretchX*2, 0, "v", 0, undefined, "flipped")
+               }
+              
                break;
             case "s":
                if (!altS) {
@@ -1886,13 +1921,15 @@ function drawStyle (lineNum) {
    }
 
    function drawGrid (type) {
+      push()
+      if (webglMode) translate(0,0,-1)
       const height = typeSize + Math.abs(typeOffsetY) + typeStretchY
       const asc = max(Math.floor(typeSize*typeAscenders)+((typeSize%2===0)?0:0), 1)
 
       if (type === "debug" && !printMode) {
          lineColor.setAlpha(40)
          stroke(lineColor)
-         strokeWeight(0.2*(svgMode?appScale:1))
+         strokeWeight(0.2*strokeScaleFactor)
    
          const i = lineNum * totalHeight[lineNum] - typeSize/2
          if (typeOffsetX<0) {
@@ -1900,23 +1937,23 @@ function drawStyle (lineNum) {
          }
 
          //vertical gridlines
-         line(0, i, totalWidth[lineNum], i)
-         line(0, i+height, totalWidth[lineNum], i+height)
-         line(0, i-asc, totalWidth[lineNum], i-asc)
-         line(0, i+height/2-typeOffsetY*0.5, totalWidth[lineNum], i+height/2-typeOffsetY*0.5)
-         line(0, i+height/2+typeOffsetY*0.5, totalWidth[lineNum], i+height/2+typeOffsetY*0.5)
-         line(0, i+height+asc, totalWidth[lineNum], i+height+asc)
+        lineType(0, i, totalWidth[lineNum], i)
+        lineType(0, i+height, totalWidth[lineNum], i+height)
+        lineType(0, i-asc, totalWidth[lineNum], i-asc)
+        lineType(0, i+height/2-typeOffsetY*0.5, totalWidth[lineNum], i+height/2-typeOffsetY*0.5)
+        lineType(0, i+height/2+typeOffsetY*0.5, totalWidth[lineNum], i+height/2+typeOffsetY*0.5)
+        lineType(0, i+height+asc, totalWidth[lineNum], i+height+asc)
    
          //horizontal gridlines
          push()
          translate(0,i+height*0.5)
          for (let j = 0; j <= totalWidth[lineNum]; j++) {
-            line(j, -height/2-asc, j, height/2+asc)
+           lineType(j, -height/2-asc, j, height/2+asc)
          }
          pop()
       } else if (!debugGridMode){
          stroke(lineColor)
-         strokeWeight((typeWeight/10)*1*(svgMode?appScale:1))
+         strokeWeight((typeWeight/10)*1*strokeScaleFactor)
          const i = lineNum * totalHeight[lineNum] - typeSize/2
          push()
          translate(0,i+height*0.5)
@@ -1925,20 +1962,21 @@ function drawStyle (lineNum) {
          }
          if (type === "vertical" || type === "grid") {
             for (let j = 0; j <= totalWidth[lineNum]; j++) {
-               line(j, -height/2-asc, j, height/2+asc)
+              lineType(j, -height/2-asc, j, height/2+asc)
             }
          }
          if (type === "horizontal" || type === "grid") {
             let middleLine = ((typeSize + typeStretchY + typeOffsetY) % 2 === 0) ? 0 : 0.5
             for (let k = middleLine; k <= totalHeight[lineNum]/2; k++) {
-               line(0, k, totalWidth[lineNum], k)
-               line(0, -k, totalWidth[lineNum], -k)
+              lineType(0, k, totalWidth[lineNum], k)
+              lineType(0, -k, totalWidth[lineNum], -k)
             }
          }
          pop()
       }
       bgColor.setAlpha(255)
       lineColor.setAlpha(255)
+      pop()
    }
 }
 
@@ -2293,4 +2331,73 @@ function addLeadingChar (input, count) {
       string = ".".repeat(addcount) + string
    }
    return string
+}
+
+
+function lineType (x1, y1, x2, y2) {
+   if (webglMode) {
+      push()
+      //translate(0, 0, random())
+
+      //line(x1, y1, x2, y2)
+      push()
+      noStroke()
+      fill("white")
+      specularMaterial(255);
+      for (let i = 0; i < 11; i++) {
+         push()
+         translate(x1+(x2-x1)*0.1*i, y1+(y2-y1)*0.1*i)
+         sphere(typeWeight/10,6, 6)
+         pop()
+      }
+      //translate((x1+x2)/2, (y1+y2)/2)
+      //cylinder(typeWeight/10, abs(x2-x1)+abs(y2-y1), 6, 1, false, false)
+      pop()
+
+     // noStroke()
+     // fill("white")
+     // circle(x1, y1, (typeWeight/10)*1)
+     // circle(x2, y2, (typeWeight/10)*1)
+     // noFill()
+      pop()
+      return
+   }
+   line(x1, y1, x2, y2)
+}
+
+function arcType (x, y, w, h, start, stop) {
+   if (webglMode) {
+      push()
+      //translate(0, 0, random())
+      
+      //arc(x, y, w, h, start, stop,undefined,12)
+      noStroke()
+      fill("white")
+      specularMaterial(255);
+      for (let i = 0; i < 11; i++) {
+         push()
+         const angle = start + (stop-start)*0.1*i
+         translate(x, y)
+         translate(cos(angle)*(w/2), sin(angle)*(w/2))
+         sphere(typeWeight/10,6, 6)
+         pop()
+      }
+      
+      //endcaps
+      //noStroke()
+      //fill("white")
+//
+      //   push()
+      //   translate(cos(start)*(w/2), sin(start)*(w/2))
+      //   circle(x, y, (typeWeight/10)*1)
+      //   pop()
+//
+      //   push()
+      //   translate(cos(stop)*(w/2), sin(stop)*(w/2))
+      //   circle(x, y, (typeWeight/10)*1)
+      //   pop()
+      //pop()
+      return
+   }
+   arc(x, y, w, h, start, stop)
 }
