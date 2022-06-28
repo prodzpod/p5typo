@@ -24,10 +24,22 @@ canvas {
 
 /* GUI */
 
-.grid-container {
+.top-container {
   margin: 15px;
+  display:grid;
+  grid-template-columns: 1fr max-content;
+  grid-gap:1.5em;
+}
+
+.grid-container {
   display: grid;
-  grid-template-columns: repeat(5, max-content);
+  grid-template-columns: repeat(4, max-content);
+  grid-gap: 1.5em;
+}
+
+.right-grid-container {
+  display: grid;
+  grid-template-columns: max-content max-content;
   grid-gap: 1.5em;
 }
 
@@ -169,12 +181,25 @@ button {
   max-height: 3em;
 }
 
-button:hover {
-  background-color: rgba(var(--fg-color), 0.3);;
+.secondary-button {
+  background-color: transparent;
+  border: 2px solid rgba(var(--fg-color), 0.15);
+  color: rgba(var(--fg-color), 0.8);
 }
 
-button:active {
-  background-color: rgba(var(--fg-color), 0.1);;
+.primary-button:hover {
+  background-color: rgba(var(--fg-color), 0.3);
+}
+.primary-button:active {
+  background-color: rgba(var(--fg-color), 0.1);
+}
+.secondary-button:hover {
+  border: 2px solid rgba(var(--fg-color), 0.3);
+  color: rgb(var(--fg-color));
+}
+.secondary-button:active {
+  border: 2px solid rgba(var(--fg-color), 0.2);
+  color: rgb(var(--fg-color));
 }
 
 ::-moz-selection { /* Code for Firefox */

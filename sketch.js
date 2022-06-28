@@ -17,17 +17,13 @@ let lerpLength = 6
 let darkMode = true
 let monochromeTheme = false
 let xrayMode = false
+let gradientMode = false
+
 let drawFills = true
 let alignCenter = false
 let strokeGradient = false
 let initialDraw = true
 let gridType = ""
-
-let sliderModes = [
-   "size", "rings", "spacing", "xoffset", "yoffset", "xstretch", "ystretch", "weight", "gradient"
-]
-let sliderMode = 0
-let sliderChange = 0
 let waveMode = false
 
 let strokeScaleFactor = 1
@@ -44,11 +40,11 @@ let values = {
    stretchX: {from: 0, to: undefined, lerp: 0},
    offsetY: {from: 0, to: undefined, lerp: 0},
    stretchY: {from: 0, to: undefined, lerp: 0},
-   gradient: {from: 0, to: undefined, lerp: 0},
    weight: {from: 7, to: undefined, lerp: 0},
    ascenders: {from: 2, to: undefined, lerp: 0},
    scale: {from: 10, to: undefined, lerp: 0},
 }
+
 // calculated every frame based on current lerps
 let typeSize
 let typeRings
@@ -58,11 +54,19 @@ let typeOffsetY
 let typeStretchX
 let typeStretchY
 let typeWeight
-let typeGradient
 let typeAscenders
 let themeDark
 let themeLight
 let typeSpacingY = undefined//5*0.25 +1
+
+const numberInputsObj = {
+   scale: {element: document.getElementById('number-scale'), min: 1, max:50},
+   weight: {element: document.getElementById('number-weight'), min: 1, max: 9},
+   spacing: {element: document.getElementById('number-spacing'), min: -2, max:2},
+   size: {element: document.getElementById('number-size'), min: 1, max:50},
+   rings: {element: document.getElementById('number-rings'), min: 1, max:30},
+   ascenders: {element: document.getElementById('number-asc'), min: 1, max:30},
+}
 
 let linesArray = ["hamburgefonstiv"]
 const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!?-_ "
@@ -125,15 +129,9 @@ function createGUI () {
    // toggles and buttles
    const randomizeButton = document.getElementById('button-randomize')
    randomizeButton.addEventListener('click', () => {
-      //random
-      //randomizeAuto = !randomizeAuto
-      //if (randomizeAuto) {
-      //   lerpLength = 12
-      //} else {
-      //   lerpLength = 6
-      //}
       randomizeValues()
    })
+
    const resetStyleButton = document.getElementById('button-resetStyle')
    resetStyleButton.addEventListener('click', () => {
       //reset
@@ -145,10 +143,29 @@ function createGUI () {
       values.stretchX.to = 0
       values.stretchY.to = 0
       values.weight.to = 7
-      values.gradient.to = 0
       values.ascenders.to = 2
       lerpLength = 6
       writeValuesToURL()
+      writeValuesToGUI()
+   })
+   const randomTextButton = document.getElementById('button-randomText')
+   randomTextButton.addEventListener('click', () => {
+      const textOptions = [
+         "hamburgefonstiv\nlorem ipsum",
+         "lorem ipsum\ndolor sit amet",
+         "the quick brown\nfox jumps over\nthe lazy dog.",
+      ]
+      let foundNewText = false
+      while (!foundNewText) {
+         const randomText = textOptions[Math.floor(Math.random()*textOptions.length)]
+         const testLinesArray = randomText.split("\n").filter(function(e){ return e === 0 || e })
+         if (testLinesArray[0] !== linesArray[0]) {
+            linesArray = [...testLinesArray]
+            foundNewText = true
+         }
+      }
+      writeValuesToURL()
+      writeValuesToGUI()
    })
 
    const darkmodeToggle = document.getElementById('checkbox-darkmode')
@@ -190,22 +207,25 @@ function createGUI () {
          location.reload()
       }
    })
+   const gradientToggle = document.getElementById('checkbox-gradient')
+   gradientToggle.checked = gradientMode
+   gradientToggle.addEventListener('click', () => {
+      gradientMode = gradientToggle.checked
+      writeValuesToURL()
+   })
+   const altMToggle = document.getElementById('checkbox-altM')
+   altMToggle.checked = altM
+   altMToggle.addEventListener('click', () => {
+      altM = altMToggle.checked
+      writeValuesToURL()
+   })
 
    const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
 
-   const numberInput = {
-      scale: {element: document.getElementById('number-scale'), min: 1, max:50},
-      weight: {element: document.getElementById('number-weight'), min: 1, max: 9},
-      spacing: {element: document.getElementById('number-spacing'), min: -2, max:2},
-      size: {element: document.getElementById('number-size'), min: 1, max:50},
-      rings: {element: document.getElementById('number-rings'), min: 1, max:30},
-      ascenders: {element: document.getElementById('number-asc'), min: 1, max:30},
-   }
-
-   for (const [key, value] of Object.entries(numberInput)) {
-      value.element.value = values[key].from
-      value.element.addEventListener('input', () => {
-         values[key].to = clamp(value.element.value, value.min, value.max)
+   for (const [property, numberInput] of Object.entries(numberInputsObj)) {
+      numberInput.element.value = values[property].from
+      numberInput.element.addEventListener('input', () => {
+         values[property].to = clamp(numberInput.element.value, numberInput.min, numberInput.max)
          writeValuesToURL()
       })
    }
@@ -247,6 +267,10 @@ function loadValuesFromURL () {
       monochromeTheme = true
       print("Loaded with URL Mode: Mono")
    }
+   if (params.gradient === "true" || params.gradient ===  "1") {
+      gradientMode = true
+      print("Loaded with URL Mode: Gradient Fill")
+   }
    if (params.strokegradient === "true" || params.strokegradient === "1") {
       strokeGradient = true
       print("Loaded with URL Mode: Stroke Gradient")
@@ -259,7 +283,7 @@ function loadValuesFromURL () {
       const valString = String(params.values)
       const valArray = valString.split('_')
 
-      if (valString.match("[0-9_-]+") && valArray.length === 11) {
+      if (valString.match("[0-9_-]+") && valArray.length === 10) {
          print("Loaded with parameters", valArray)
          values.scale.from = parseInt(valArray[0])
          values.size.from = parseInt(valArray[1])
@@ -270,8 +294,7 @@ function loadValuesFromURL () {
          values.stretchX.from = parseInt(valArray[6])
          values.stretchY.from = parseInt(valArray[7])
          values.weight.from = parseInt(valArray[8])
-         values.gradient.from = parseInt(valArray[9])
-         values.ascenders.from = parseInt(valArray[10])
+         values.ascenders.from = parseInt(valArray[9])
       } else {
          print("Has to be 11 negative or positive numbers with _ in between")
       }
@@ -316,7 +339,6 @@ function writeValuesToURL (noReload) {
       valueArr.push(""+getValue("stretchX"))
       valueArr.push(""+getValue("stretchY"))
       valueArr.push(""+getValue("weight"))
-      valueArr.push(""+getValue("gradient"))
       valueArr.push(""+getValue("ascenders"))
 
       newParams.append("values",valueArr.join("_"))
@@ -345,6 +367,9 @@ function writeValuesToURL (noReload) {
    if (waveMode) {
       newParams.append("wave",true)
    }
+   if (gradientMode) {
+      newParams.append("gradient", true)
+   }
    if (!drawFills) {
       newParams.append("solid",false)
    }
@@ -372,88 +397,47 @@ function writeValuesToURL (noReload) {
    }
 }
 
+function writeValuesToGUI () {
+   for (const [property, numberInput] of Object.entries(numberInputsObj)) {
+      if (values[property].to !== undefined) {
+         numberInput.element.value = values[property].to
+      } else {
+         numberInput.element.value = values[property].from
+      }
+   }
+   writeArea.value = linesArray.join("\n")
+}
+
 function keyTyped() {
-   //if (key === "2") {
-   //   darkMode = !darkMode
-   //   changeValuesAndURL()
-   //   return
-   //}
-   //else if (key === "1") {
-   //   return
-   //}
-   //else if (key === "3") {
-   //   //toggle print b/w mode
-   //   monochromeTheme = !monochromeTheme
-   //   changeValuesAndURL()
-   //   return
-   //}
-   //else if (key === "4") {
-   //   //toggle debug mode
-   //   xrayMode = !xrayMode
-   //   changeValuesAndURL()
-   //   return
-   //}
-   //else if (key === "5") {
-   //   waveMode = !waveMode
-   //   changeValuesAndURL()
-   //   return
-   //}
-   //else if (key === "6") {
-   //   drawFills = !drawFills
-   //   changeValuesAndURL()
-   //   return
-   //}
-   //else if (key === "7") {
-   //   alignCenter = !alignCenter
-   //   changeValuesAndURL()
-   //   return
-   //}
+   // wip
 }
 
 function keyPressed() {
-   sliderChange = 0
-   if (keyCode === LEFT_ARROW) {
-      // sliderChange = -1
-      writeValuesToURL()
-      return
-   }
-   else if (keyCode === RIGHT_ARROW) {
-      //sliderChange = 1
-      writeValuesToURL()
-      return
-   }
-   else if (keyCode === DOWN_ARROW) {
-      sliderMode += 1
-      if (sliderMode >= sliderModes.length) {
-         sliderMode = 0
-      }
-      return
-   }
-   else if (keyCode === UP_ARROW) {
-      sliderMode -= 1
-      if (sliderMode < 0) {
-         sliderMode = sliderModes.length-1
-      }
-      return
-   }
+   //if (keyCode === LEFT_ARROW) {
+   //   writeValuesToURL()
+   //   return
+   //}
+   //else if (keyCode === RIGHT_ARROW) {
+   //   writeValuesToURL()
+   //   return
+   //}
 }
 
-function randomizeValues() {
+function randomizeValues () {
    values.size.to = floor(random(4,16))
    values.weight.to = floor(random(2,10))
    values.rings.to = floor(random(1, values.size.to/2 + 1))
-   values.spacing.to = floor(random(-values.rings.to, 2))
+   values.spacing.to = floor(random(max(-values.rings.to, -2), 2))
    values.ascenders.to = floor(random(1, values.size.to*0.6))
 
    values.offsetX.to = 0
    values.offsetY.to = 0
    values.stretchX.to = 0
    values.stretchY.to = 0
-   values.gradient.to = 0
 
    const offsetType = random(["v", "h", "h", "h", "0", "0", "0", "vh"])
    if (offsetType === "h") {
-      values.offsetX.to = floor((random(-values.rings.to+1, values.rings.to) + random(-values.rings.to+1, values.rings.to))*0.5)
+      values.offsetX.to = floor(random(-2, 2))
    } else if (offsetType === "v") {
       values.offsetY.to = floor(random(-1, 2))
    } else if (offsetType === "ha") {
@@ -470,14 +454,11 @@ function randomizeValues() {
       values.stretchY.to = floor(random(0, values.size.to*1.5))
    }
 
-   if (random() >= 0.7 && values.rings.to > 1) {
-      values.gradient.to = floor(random(3,9))
-   }
-
    values.colorDark.to = color('hsl('+floor(random(0,360))+', 100%, 06%)')
    values.colorLight.to = color('hsl('+floor(random(0,360))+', 100%, 90%)')
-   
+
    writeValuesToURL()
+   writeValuesToGUI()
    return
 }
 
@@ -485,6 +466,7 @@ function draw () {
    // if a "to" value in the values object is not undefined, get closer to it by increasing that "lerp"
    // when the "lerp" value is at 6, the "to" value has been reached,
    // and can be cleared again, new "from" value set.
+
    if (randomizeAuto && frameCount%60 === 0) {
       randomizeValues()
    }
@@ -518,6 +500,7 @@ function draw () {
       }
       return map(slider.lerp,0,lerpLength,slider.from, slider.to)
    }
+
    typeSize = lerpValues(values.size)
    typeRings = lerpValues(values.rings)
    typeSpacing = lerpValues(values.spacing)
@@ -526,7 +509,6 @@ function draw () {
    typeStretchX = lerpValues(values.stretchX)
    typeStretchY = lerpValues(values.stretchY)
    typeWeight = lerpValues(values.weight)
-   typeGradient = lerpValues(values.gradient)
    typeAscenders = lerpValues(values.ascenders)
    themeDark = lerpValues(values.colorDark, "color")
    themeLight = lerpValues(values.colorLight, "color")
@@ -869,7 +851,7 @@ function drawStyle (lineNum) {
          if (xrayMode) {
             strokeWeight(0.2*strokeScaleFactor)
          }
-         innerColor = (xrayMode)? color("orange"): lerpColor(lineColor,bgColor,typeGradient/10)
+         innerColor = (xrayMode)? color("orange") : lerpColor(lineColor,bgColor,(gradientMode) ? 0.5 : 0)
          outerColor = lineColor
          draw()
 
@@ -1065,7 +1047,7 @@ function drawStyle (lineNum) {
          if (xrayMode) {
             strokeWeight(0.2*strokeScaleFactor)
          }
-         innerColor = (xrayMode)? color("lime"): lerpColor(lineColor,bgColor,typeGradient/10)
+         innerColor = (xrayMode)? color("lime") : lerpColor(lineColor,bgColor,(gradientMode) ? 0.5 : 0)
          outerColor = lineColor
          draw()
 
