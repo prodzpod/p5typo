@@ -1,73 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>p5 Multiline</title>
+      <title>p5 Multiline</title>
 
-    <link rel="stylesheet" type="text/css" href="style.css">
+      <link rel="stylesheet" type="text/css" href="style.css">
 
-    <script src="libraries/p5.min.js"></script>
-    <script src="libraries/p5.sound.min.js"></script>
-    <script src="https://unpkg.com/p5.js-svg@1.3.1"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap" rel="stylesheet"> 
-  </head>
+      <script src="libraries/p5.min.js"></script>
+      <script src="libraries/p5.sound.min.js"></script>
+      <script src="https://unpkg.com/p5.js-svg@1.3.1"></script>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap" rel="stylesheet"> 
+   </head>
 
-  <body>
-    <div class="grid-container">
-      <textarea rows="5" id="textarea-lines" placeholder="type lines here!"></textarea>
-      <div>
-        <label class="checkbox-container">dark mode
-          <input type="checkbox" id="checkbox-darkmode" checked="checked">
-          <span class="checkmark"></span>
-        </label>
-        <label class="checkbox-container">monochrome
-          <input type="checkbox" id="checkbox-monochrome">
-          <span class="checkmark"></span>
-        </label>
-        <label class="checkbox-container">x-ray view
-          <input type="checkbox" id="checkbox-xray">
-          <span class="checkmark"></span>
-        </label>
-        <label class="checkbox-container">svg mode
-          <input type="checkbox" id="checkbox-svg">
-          <span class="checkmark"></span>
-        </label>
-        <label class="checkbox-container">webgl mode
-          <input type="checkbox" id="checkbox-webgl">
-          <span class="checkmark"></span>
-        </label>
+   <body>
+      <div class="grid-container">
+         <textarea rows="5" id="textarea-lines" placeholder="type lines here!"></textarea>
+         <div>
+            <label class="checkbox-container">dark mode
+               <input type="checkbox" id="checkbox-darkmode" checked="checked">
+               <span class="checkmark"></span>
+            </label>
+            <label class="checkbox-container">monochrome
+               <input type="checkbox" id="checkbox-monochrome">
+               <span class="checkmark"></span>
+            </label>
+            <label class="checkbox-container">x-ray view
+               <input type="checkbox" id="checkbox-xray">
+               <span class="checkmark"></span>
+            </label>
+            <label class="checkbox-container">svg mode
+               <input type="checkbox" id="checkbox-svg">
+               <span class="checkmark"></span>
+            </label>
+            <label class="checkbox-container">webgl mode
+               <input type="checkbox" id="checkbox-webgl">
+               <span class="checkmark"></span>
+            </label>
+         </div>
+         <div class="buttons-container">
+            <button id="button-randomize">random style</button>
+            <button id="button-resetStyle">reset style</button>
+         </div>
+         <div class="numbers-container">
+            <input id="number-size" type="number" value="9" min="1">
+            <label>size</label>
+
+            <input id="number-rings" type="number" value="3" min="1">
+            <label>rings</label>
+
+            <input id="number-asc" type="number" value="2" min="1">
+            <label class="number-label">asc/desc</label>
+         </div>
+         <div class="numbers-container">
+            <input id="number-spacing" type="number" value="0" min="-2" max="2">
+            <label class="number-label">spacing</label>
+
+            <input id="number-weight" type="number" value="7" min="1" max="9">
+            <label class="number-label">weight</label>
+
+            <input id="number-scale" type="number" value="10">
+            <label class="number-label">scale</label>
+         </div>
       </div>
-      <div>
-        <button id="button-randomize">random style</button>
-        <button id="button-resetStyle">reset style</button>
-      </div>
-      <div>
-        <label class="number-container">scale
-          <input id="number-scale" type="number" value="10">
-        </label>
-        <label class="number-container">weight
-          <input id="number-weight" type="number" value="7">
-        </label>
-        <label class="number-container">spacing
-          <input id="number-spacing" type="number" value="0">
-        </label>
-      </div>
-      <div>
-        <label class="number-container">size
-          <input id="number-size" type="number" value="9">
-        </label>
-        <label class="number-container">rings
-          <input id="number-rings" type="number" value="3">
-        </label>
-        <label class="number-container">asc/desc
-          <input id="number-asc" type="number" value="2">
-        </label>
-      </div>
-    </div>
-    <script src="sketch.js"></script>
-  </body>
+      <script src="sketch.js"></script>
+   </body>
 </html>

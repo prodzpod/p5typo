@@ -196,7 +196,7 @@ function createGUI () {
    const numberInput = {
       scale: {element: document.getElementById('number-scale'), min: 1, max:50},
       weight: {element: document.getElementById('number-weight'), min: 1, max: 9},
-      spacing: {element: document.getElementById('number-spacing'), min: -1, max:2},
+      spacing: {element: document.getElementById('number-spacing'), min: -2, max:2},
       size: {element: document.getElementById('number-size'), min: 1, max:50},
       rings: {element: document.getElementById('number-rings'), min: 1, max:30},
       ascenders: {element: document.getElementById('number-asc'), min: 1, max:30},
@@ -205,8 +205,7 @@ function createGUI () {
    for (const [key, value] of Object.entries(numberInput)) {
       value.element.value = values[key].from
       value.element.addEventListener('input', () => {
-         values[key].to = value.element.value
-         values[key].to = clamp(values[key].to, value.min, value.max)
+         values[key].to = clamp(value.element.value, value.min, value.max)
          writeValuesToURL()
       })
    }
@@ -1915,7 +1914,7 @@ function addSpacingBetween(prevchar, char, nextchar, spacing, inner, outer, exte
          charWidth = 2 + outer
          break;
       case " ":
-         charWidth = ceil(outer*0.5)
+         charWidth = max([2, typeSpacing*2, ceil(inner*0.5)])
          break;
       case "i":
       case ".":
