@@ -30,7 +30,6 @@ let sliderMode = 0
 let sliderChange = 0
 let waveMode = false
 
-const appScale = 10
 let strokeScaleFactor = 1
 const totalWidth = [0, 0, 0, 0]
 const totalHeight = [0, 0, 0, 0]
@@ -48,6 +47,7 @@ let values = {
    gradient: {from: 0, to: undefined, lerp: 0},
    weight: {from: 7, to: undefined, lerp: 0},
    ascenders: {from: 2, to: undefined, lerp: 0},
+   scale: {from: 10, to: undefined, lerp: 0},
 }
 // calculated every frame based on current lerps
 let typeSize
@@ -90,17 +90,17 @@ function setup () {
       strokeCap(ROUND)
       textFont("Courier Mono")
       frameRate(60)
-      if (svgMode) strokeScaleFactor = appScale
+      if (svgMode) strokeScaleFactor = values.scale.from
    } else {
       frameRate(60)
-      strokeScaleFactor = appScale
+      strokeScaleFactor = values.scale.from
    }
    rectMode(CORNERS)
 
    values.colorDark.from = color("#090510")
    values.colorLight.from = color("#C4B6FF")
 
-   changeValuesAndURL("noReload")
+   writeValuesToURL("noReload")
 }
 
 function createGUI () {
@@ -113,7 +113,7 @@ function createGUI () {
    writeArea.addEventListener('input', function() {
       //split and filter out "", undefined
       linesArray = writeArea.value.split("\n").filter(function(e){ return e === 0 || e });
-      changeValuesAndURL()
+      writeValuesToURL()
    }, false)
    writeArea.addEventListener('focusin', () => {
       writingMode = true
@@ -148,32 +148,32 @@ function createGUI () {
       values.gradient.to = 0
       values.ascenders.to = 2
       lerpLength = 6
-      changeValuesAndURL()
+      writeValuesToURL()
    })
 
    const darkmodeToggle = document.getElementById('checkbox-darkmode')
    darkmodeToggle.checked = darkMode
    darkmodeToggle.addEventListener('click', () => {
       darkMode = darkmodeToggle.checked
-      changeValuesAndURL()
+      writeValuesToURL()
    })
    const monochromeToggle = document.getElementById('checkbox-monochrome')
    monochromeToggle.checked = monochromeTheme
    monochromeToggle.addEventListener('click', () => {
       monochromeTheme = monochromeToggle.checked
-      changeValuesAndURL()
+      writeValuesToURL()
    })
    const xrayToggle = document.getElementById('checkbox-xray')
    xrayToggle.checked = xrayMode
    xrayToggle.addEventListener('click', () => {
       xrayMode = xrayToggle.checked
-      changeValuesAndURL()
+      writeValuesToURL()
    })
    const svgToggle = document.getElementById('checkbox-svg')
    svgToggle.checked = svgMode
    svgToggle.addEventListener('click', () => {
       svgMode = svgToggle.checked
-      changeValuesAndURL()
+      writeValuesToURL()
       if (!svgToggle.checked) {
          location.reload()
       }
@@ -185,11 +185,31 @@ function createGUI () {
       if (!webglMode.checked) {
          noLoop()
       }
-      changeValuesAndURL()
+      writeValuesToURL()
       if (!webglMode.checked) {
          location.reload()
       }
    })
+
+   const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
+
+   const numberInput = {
+      scale: {element: document.getElementById('number-scale'), min: 1, max:50},
+      weight: {element: document.getElementById('number-weight'), min: 1, max: 9},
+      spacing: {element: document.getElementById('number-spacing'), min: -1, max:2},
+      size: {element: document.getElementById('number-size'), min: 1, max:50},
+      rings: {element: document.getElementById('number-rings'), min: 1, max:30},
+      ascenders: {element: document.getElementById('number-asc'), min: 1, max:30},
+   }
+
+   for (const [key, value] of Object.entries(numberInput)) {
+      value.element.value = values[key].from
+      value.element.addEventListener('input', () => {
+         values[key].to = value.element.value
+         values[key].to = clamp(values[key].to, value.min, value.max)
+         writeValuesToURL()
+      })
+   }
 }
 
 function loadValuesFromURL () {
@@ -240,20 +260,21 @@ function loadValuesFromURL () {
       const valString = String(params.values)
       const valArray = valString.split('_')
 
-      if (valString.match("[0-9_-]+") && valArray.length === 10) {
+      if (valString.match("[0-9_-]+") && valArray.length === 11) {
          print("Loaded with parameters", valArray)
-         values.size.from = parseInt(valArray[0])
-         values.rings.from = parseInt(valArray[1])
-         values.spacing.from = parseInt(valArray[2])
-         values.offsetX.from = parseInt(valArray[3])
-         values.offsetY.from = parseInt(valArray[4])
-         values.stretchX.from = parseInt(valArray[5])
-         values.stretchY.from = parseInt(valArray[6])
-         values.weight.from = parseInt(valArray[7])
-         values.gradient.from = parseInt(valArray[8])
-         values.ascenders.from = parseInt(valArray[9])
+         values.scale.from = parseInt(valArray[0])
+         values.size.from = parseInt(valArray[1])
+         values.rings.from = parseInt(valArray[2])
+         values.spacing.from = parseInt(valArray[3])
+         values.offsetX.from = parseInt(valArray[4])
+         values.offsetY.from = parseInt(valArray[5])
+         values.stretchX.from = parseInt(valArray[6])
+         values.stretchY.from = parseInt(valArray[7])
+         values.weight.from = parseInt(valArray[8])
+         values.gradient.from = parseInt(valArray[9])
+         values.ascenders.from = parseInt(valArray[10])
       } else {
-         print("Has to be 10 negative or positive numbers with _ in between")
+         print("Has to be 11 negative or positive numbers with _ in between")
       }
    }
    if (params.grid !== null && params.grid.length > 0) {
@@ -268,65 +289,8 @@ function loadValuesFromURL () {
    }
 }
 
-function changeValuesAndURL (noReload) {
-   // translate left/right arrow use to correct "to" value
-   if (sliderChange !== 0) {
-      switch (sliderMode) {
-         case 0:
-            values.size.to = values.size.from + sliderChange
-            // smallest possible size is 1
-            values.size.to = max(values.size.to, 1)
-            break;
-         case 1:
-            values.rings.to = values.rings.from + sliderChange
-            // smallest possible ring count is 1
-            values.rings.to = max(values.rings.to, 1)
-            break;
-         case 2:
-            values.spacing.to = values.spacing.from + sliderChange
-            // furthest spacing is half the outer size
-            values.spacing.to = max(values.spacing.to, Math.ceil(values.size.from*-0.5))
-            values.spacing.to = min(values.spacing.to, Math.ceil(values.size.from*0.25))
-            break;
-         case 3:
-            values.offsetX.to = values.offsetX.from + sliderChange
-            //furthest offset is spacing + outer size
-            values.offsetX.to = max(values.offsetX.to, -(values.size.from+values.spacing.from))
-            values.offsetX.to = min(values.offsetX.to, (values.size.from+values.spacing.from))
-            break;
-         case 4:
-            values.offsetY.to = values.offsetY.from + sliderChange
-            //furthest vert offset is outer size
-            values.offsetY.to = max(values.offsetY.to, -(values.size.from))
-            values.offsetY.to = min(values.offsetY.to, (values.size.from))
-            break;
-         case 5:
-            values.stretchX.to = values.stretchX.from + sliderChange
-            //stretch is minimum 0
-            values.stretchX.to = max(values.stretchX.to, 0)
-            break;
-         case 6:
-            values.stretchY.to = values.stretchY.from + sliderChange
-            //stretch is minimum 0
-            values.stretchY.to = max(values.stretchY.to, 0)
-            break;
-         case 7:
-            values.weight.to = values.weight.from + sliderChange
-            //weight
-            values.weight.to = max(values.weight.to, 2)
-            values.weight.to = min(values.weight.to, 9)
-            break;
-         case 8:
-            values.gradient.to = values.gradient.from + sliderChange
-            //gradient
-            values.gradient.to = max(values.gradient.to, 0)
-            values.gradient.to = min(values.gradient.to, 9)
-            break;
-      }
-      sliderChange = 0
-   }
+function writeValuesToURL (noReload) {
 
-   // change URL
    let URL = String(window.location.href)
    if (URL.includes("?")) {
       URL = URL.split("?",1)
@@ -344,6 +308,7 @@ function changeValuesAndURL (noReload) {
          }
       }
       let valueArr = []
+      valueArr.push(""+getValue("scale"))
       valueArr.push(""+getValue("size"))
       valueArr.push(""+getValue("rings"))
       valueArr.push(""+getValue("spacing"))
@@ -450,12 +415,12 @@ function keyPressed() {
    sliderChange = 0
    if (keyCode === LEFT_ARROW) {
       // sliderChange = -1
-      changeValuesAndURL()
+      writeValuesToURL()
       return
    }
    else if (keyCode === RIGHT_ARROW) {
       //sliderChange = 1
-      changeValuesAndURL()
+      writeValuesToURL()
       return
    }
    else if (keyCode === DOWN_ARROW) {
@@ -513,7 +478,7 @@ function randomizeValues() {
    values.colorDark.to = color('hsl('+floor(random(0,360))+', 100%, 06%)')
    values.colorLight.to = color('hsl('+floor(random(0,360))+', 100%, 90%)')
    
-   changeValuesAndURL()
+   writeValuesToURL()
    return
 }
 
@@ -602,7 +567,7 @@ function draw () {
    const vGap = (typeSpacingY !== undefined) ? typeSpacingY : 0 
    const newWidth = Math.max(...totalWidth) + hMargin*2
    const newHeight = (linesArray.length) * Math.max(...totalHeight) + (linesArray.length-1)*vGap + vMargin*2
-   resizeCanvas(newWidth*appScale, newHeight*appScale)
+   resizeCanvas(newWidth*values.scale.from, newHeight*values.scale.from)
    cnv.style('display', 'block')
    cnv.style('margin', '15px')
 
@@ -619,7 +584,7 @@ function draw () {
 function drawElements() {
    push()
    if (webglMode) translate(-width/2, -height/2)
-   scale(appScale)
+   scale(values.scale.from)
    translate(3, 3)
 
    translate(0, max(typeAscenders, 1))
@@ -732,7 +697,7 @@ function drawStyle (lineNum) {
    //translate to center if toggled
    push()
    if (alignCenter) {
-      translate(-6+(width/appScale-totalWidth[lineNum])/2,0)
+      translate(-6+(width/values.scale.from-totalWidth[lineNum])/2,0)
    }
    if (typeOffsetX < 0) {
       translate(-typeOffsetX,0)

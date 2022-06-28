@@ -31,11 +31,10 @@ canvas {
   grid-gap: 1em;
 }
 
-textarea {
+textarea, input {
   background-color: rgb(var(--bg-color));
   color: rgba(var(--fg-color), 0.8);
   padding: 0.2em 0.5em;
-  width: 20em;
   outline: none; /* remove default highlighting */
 
   border: none;
@@ -46,7 +45,11 @@ textarea {
   scrollbar-width: none;  /* Firefox */
 }
 
-textarea:focus {
+textarea {
+  width: 20em;
+}
+
+textarea:focus, input:focus {
   background-color: rgb(var(--bg-color));
   color: rgba(var(--fg-color), 1);
 }
@@ -55,8 +58,8 @@ textarea::-webkit-scrollbar {
   display: none;
 }
 
- /* Customize the label (the container) */
- .checkbox-container {
+/* Customize the label (the container) */
+.checkbox-container {
   display: block;
   position: relative;
   padding-left: 1.5em;
@@ -67,6 +70,15 @@ textarea::-webkit-scrollbar {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+.number-container {
+  font-size: 16px;
+  color: rgba(var(--fg-color), 0.8);
+}
+
+.number-container input {
+  color: rgb(var(--fg-color));
 }
 
 /* Hide the browser's default checkbox */
@@ -152,4 +164,16 @@ button:active {
 ::selection {
   color: #fff;
   background: rgba(var(--fg-color), 0.5);;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
 }
