@@ -17,6 +17,35 @@
   </head>
 
   <body>
+    <div class="grid-container">
+      <textarea rows="5" id="textarea-lines" placeholder="type lines here!"></textarea>
+      <div>
+        <label class="checkbox-container">dark mode
+          <input type="checkbox" id="checkbox-darkmode" checked="checked">
+          <span class="checkmark"></span>
+        </label>
+        <label class="checkbox-container">monochrome
+          <input type="checkbox" id="checkbox-monochrome">
+          <span class="checkmark"></span>
+        </label>
+        <label class="checkbox-container">x-ray view
+          <input type="checkbox" id="checkbox-xray">
+          <span class="checkmark"></span>
+        </label>
+        <label class="checkbox-container">svg mode
+          <input type="checkbox" id="checkbox-svg">
+          <span class="checkmark"></span>
+        </label>
+        <label class="checkbox-container">webgl mode
+          <input type="checkbox" id="checkbox-webgl">
+          <span class="checkmark"></span>
+        </label>
+      </div>
+      <div>
+        <button id="button-randomize">random style</button>
+        <button id="button-resetStyle">reset style</button>
+      </div>
+    </div>
     <script src="sketch.js"></script>
   </body>
 </html>
