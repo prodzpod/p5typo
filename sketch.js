@@ -2348,6 +2348,7 @@ setInterval(() => {
 }, 350);
 
 function updateRangeballs() {
+   const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
    currentRangeballsValue += currentRangeballsMove / 100;
    document.getElementById(currentRangeballsTarget).value = Math.floor(currentRangeballsValue);
    let k = Object.keys(numberInputsObj).find(k => numberInputsObj[k].element.id === currentRangeballsTarget);
