@@ -2351,11 +2351,9 @@ function updateRangeballs() {
    const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
    currentRangeballsValue += currentRangeballsMove / 100;
    let k = Object.keys(numberInputsObj).find(k => numberInputsObj[k].element.id === currentRangeballsTarget);
-   if (k) values[k].to = clamp(currentRangeballsValue, numberInputsObj[k].min, numberInputsObj[k].max)
-   else if (currentRangeballsTarget === "number-offset") {
-      k = (offsetDirection === "h") ? "offsetX" : "offsetY";
-      values[k].to = Math.floor(currentRangeballsValue);
-   }
+   if (k) currentRangeballsValue = clamp(currentRangeballsValue, numberInputsObj[k].min, numberInputsObj[k].max)
+   else if (currentRangeballsTarget === "number-offset") k = (offsetDirection === "h") ? "offsetX" : "offsetY";
+   values[k].to = Math.floor(currentRangeballsValue);
    document.getElementById(currentRangeballsTarget).value = values[k].to;
    writeValuesToURL(true)
 }
