@@ -2352,7 +2352,10 @@ function updateRangeballs() {
    currentRangeballsValue += currentRangeballsMove / 100;
    document.getElementById(currentRangeballsTarget).value = Math.floor(currentRangeballsValue);
    let k = Object.keys(numberInputsObj).find(k => numberInputsObj[k].element.id === currentRangeballsTarget);
-   clamp(numberInputsObj[k].element.value, numberInputsObj[k].min, numberInputsObj[k].max)
-   values[k].to = Math.floor(currentRangeballsValue);
-   writeValuesToURL()
+   if (k) values[k].to = clamp(numberInputsObj[k].element.value, numberInputsObj[k].min, numberInputsObj[k].max)
+   else if (currentRangeballsTarget === "number-offset") {
+      k = (offsetDirection === "h") ? "offsetX" : "offsetY";
+      values[k].to = Math.floor(currentRangeballsValue);
+   }
+   writeValuesToURL(true)
 }
