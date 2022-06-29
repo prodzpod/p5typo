@@ -2323,8 +2323,6 @@ function setupRangeballs() {
    for (let rb of Array.from(document.getElementsByClassName("rangeball"))) {
       let target = rb.getAttribute("for");
       rb.setAttribute('onpointerdown', 'startRangeballs(event, "' + target + '")')
-      rb.setAttribute('onpointermove', 'duringRangeballs(event, "' + target + '")')
-      rb.setAttribute('onpointerup', 'endRangeballs(event, "' + target + '")')
    }
 }
 
@@ -2332,12 +2330,11 @@ let currentRangeballsTarget = null;
 function startRangeballs(event, target) {
    currentRangeballsTarget = target;
 }
-function duringRangeballs(event, target) {
+window.onpointermove = function(event) {
+   if (!currentRangeballsTarget) return;
    console.log(event.movementX)
-   if (currentRangeballsTarget === target) {
-      // e
-   }
+   // e
 }
-function endRangeballs(event, target) {
+window.onpointerup = function() {
    currentRangeballsTarget = null;
 }
