@@ -91,6 +91,7 @@ function windowResized() {
 
 function setup () {
    loadValuesFromURL()
+   setupRangeballs()
    createGUI()
 
    cnv = createCanvas(windowWidth-30, windowHeight-200,(webglMode)?WEBGL:(svgMode)?SVG:"")
@@ -2314,4 +2315,29 @@ function arcType (x, y, w, h, start, stop) {
 
 function rgbValues (color) {
    return color._getRed() + ", " + color._getGreen() + ", " + color._getBlue()
+}
+
+/*********************************** prod zone */
+
+function setupRangeballs() {
+   for (let rb of Array.from(document.getElementsByClassName("rangeball"))) {
+      let target = rb.getAttribute("for");
+      rb.setAttribute('onpointerdown', 'startRangeballs(event, "' + target + '")')
+      rb.setAttribute('onpointermove', 'duringRangeballs(event, "' + target + '")')
+      rb.setAttribute('onpointerup', 'endRangeballs(event, "' + target + '")')
+   }
+}
+
+let currentRangeballsTarget = null;
+function startRangeballs(event, target) {
+   currentRangeballsTarget = target;
+}
+function duringRangeballs(event, target) {
+   console.log(event.movementX)
+   if (currentRangeballsTarget === target) {
+      // e
+   }
+}
+function endRangeballs(event, target) {
+   currentRangeballsTarget = null;
 }

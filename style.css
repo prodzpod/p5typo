@@ -51,13 +51,13 @@ canvas {
 
 .offset-container {
   display:grid;
-  grid-template-columns: max-content max-content max-content;
+  grid-template-columns: max-content max-content max-content max-content;
   grid-column-gap: 0.5em;
   grid-row-gap: 0.2em;
   grid-auto-rows: max-content;
 }
 
-.offset-container *:nth-child(6) {
+.offset-container *:nth-child(8) {
   grid-column: 1;
 }
 
@@ -106,7 +106,7 @@ textarea::-webkit-scrollbar {
 
 .numbers-container {
   display:grid;
-  grid-template-columns: max-content max-content;
+  grid-template-columns: max-content max-content max-content;
   grid-column-gap: 0.5em;
   grid-row-gap: 0.2em;
 }
@@ -260,4 +260,15 @@ input[type=number] {
 #description {
   column-count: 2;
   column-gap: 1.5em;
+}
+
+/* ********************** prod zone */
+
+.rangeball {
+  width: 1em;
+  height: 1em;
+  padding: 0;
+  border-radius: 50%;
+  margin: auto 0;
+  cursor: ew-resize;
 }
