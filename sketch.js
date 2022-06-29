@@ -2337,9 +2337,21 @@ function startRangeballs(event, target) {
 window.onpointermove = function(event) {
    if (!currentRangeballsTarget) return;
    currentRangeballsMove += event.movementX;
-   currentRangeballsValue += currentRangeballsMove / 100;
-   document.getElementById(currentRangeballsTarget).value = currentRangeballsValue;
+   updateRangeballs();
 }
 window.onpointerup = function() {
    currentRangeballsTarget = null;
+}
+setInterval(() => {
+   if (!currentRangeballsTarget) return;
+   updateRangeballs();
+}, 350);
+
+function updateRangeballs() {
+   currentRangeballsValue += currentRangeballsMove / 100;
+   document.getElementById(currentRangeballsTarget).value = Math.floor(currentRangeballsValue);
+   let k = Object.keys(numberInputsObj).find(k => numberInputsObj[k].element.id === currentRangeballsTarget);
+   clamp(numberInputsObj[k].element.value, numberInputsObj[k].min, numberInputsObj[k].max)
+   values[k].to = Math.floor(currentRangeballsValue);
+   writeValuesToURL()
 }
