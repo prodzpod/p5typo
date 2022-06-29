@@ -2337,15 +2337,15 @@ function startRangeballs(event, target) {
 window.onpointermove = function(event) {
    if (!currentRangeballsTarget) return;
    currentRangeballsMove += event.movementX;
-   updateRangeballs();
 }
 window.onpointerup = function() {
    currentRangeballsTarget = null;
+   writeValuesToURL()
 }
 setInterval(() => {
    if (!currentRangeballsTarget) return;
    updateRangeballs();
-}, 350);
+}, 50);
 
 function updateRangeballs() {
    const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
