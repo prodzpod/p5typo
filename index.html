@@ -27,10 +27,10 @@
             </div>
             <div class="numbers-container">
                <input id="number-size" type="number" value="9" min="1">
-               <label>size</label>
+               <label class="number-label">size</label>
 
                <input id="number-rings" type="number" value="3" min="1">
-               <label>rings</label>
+               <label class="number-label">rings</label>
 
                <input id="number-asc" type="number" value="2" min="1">
                <label class="number-label">asc/desc</label>
@@ -44,6 +44,17 @@
 
                <input id="number-scale" type="number" value="10">
                <label class="number-label">scale</label>
+            </div>
+            <div class="offset-container">
+               <input id="number-offset" type="number" value="0" min="-10" max="10">
+               <label class="number-label">offset</label>
+               <button class="toggle-button" id="toggle-offsetDirection">⇄</button>
+
+               <input id="number-stretchX" type="number" value="0" min="0" max="50">
+               <label class="number-label">stretchX</label>
+
+               <input id="number-stretchY" type="number" value="0" min="0" max="50">
+               <label class="number-label">stretchY</label>
             </div>
          </div>
          <div class="right-grid-container">

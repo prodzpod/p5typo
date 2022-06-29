@@ -33,7 +33,7 @@ canvas {
 
 .grid-container {
   display: grid;
-  grid-template-columns: repeat(4, max-content);
+  grid-template-columns: repeat(6, max-content);
   grid-gap: 1.5em;
 }
 
@@ -42,6 +42,19 @@ canvas {
   grid-template-columns: max-content max-content;
   grid-gap: 1.5em;
 }
+
+.offset-container {
+  display:grid;
+  grid-template-columns: max-content max-content max-content;
+  grid-column-gap: 0.5em;
+  grid-row-gap: 0.2em;
+  grid-auto-rows: max-content;
+}
+
+.offset-container *:nth-child(6) {
+  grid-column: 1;
+}
+
 
 textarea, input {
   background-color: rgb(var(--bg-color));
@@ -92,14 +105,14 @@ textarea::-webkit-scrollbar {
   grid-row-gap: 0.2em;
 }
 
-.numbers-container label{
+.numbers-container label, .offset-container label{
   /* font-size: 16px; */
   color: rgba(var(--fg-color), 0.8);
   display: flex;
   align-items: center;
 }
 
-.numbers-container input {
+.numbers-container input, .offset-container input {
   color: rgb(var(--fg-color));
   width: 2.5em;
   height: 2.5em;
@@ -155,7 +168,7 @@ textarea::-webkit-scrollbar {
   top: 0px;
   width: 5px;
   height: 10px;
-  border: solid #000000;
+  border: solid rgb(var(--bg-color));
   border-width: 0 2px 2px 0;
   -webkit-transform: rotate(45deg);
   -ms-transform: rotate(45deg);
@@ -200,6 +213,17 @@ button {
 .secondary-button:active {
   border: 2px solid rgba(var(--fg-color), 0.2);
   color: rgb(var(--fg-color));
+}
+
+.toggle-button {
+  width: 2.5em;
+  height: 2.5em;
+  padding-bottom: 1em;
+  padding-left: 0em;
+  padding-right: 0em;
+}
+.toggle-button:hover {
+  background-color: rgba(var(--fg-color), 0.3);
 }
 
 ::-moz-selection { /* Code for Firefox */

@@ -20,7 +20,6 @@ let xrayMode = false
 let gradientMode = false
 
 let drawFills = true
-let alignCenter = false
 let strokeGradient = false
 let initialDraw = true
 let gridType = ""
@@ -30,9 +29,11 @@ let strokeScaleFactor = 1
 const totalWidth = [0, 0, 0, 0]
 const totalHeight = [0, 0, 0, 0]
 
+let offsetDirection = "h"
+
 let values = {
-   colorDark: {from: undefined, to: undefined, lerp: 0},
-   colorLight: {from: undefined, to: undefined, lerp: 0},
+   hueDark: {from: undefined, to: undefined, lerp: 0},
+   hueLight: {from: undefined, to: undefined, lerp: 0},
    rings: {from: 3, to: undefined, lerp: 0},
    size: {from: 9, to: undefined, lerp: 0},
    spacing: {from: 0, to: undefined, lerp: 0},
@@ -66,7 +67,10 @@ const numberInputsObj = {
    size: {element: document.getElementById('number-size'), min: 1, max:50},
    rings: {element: document.getElementById('number-rings'), min: 1, max:30},
    ascenders: {element: document.getElementById('number-asc'), min: 1, max:30},
+   stretchX: {element: document.getElementById('number-stretchX'), min:0, max:50},
+   stretchY: {element: document.getElementById('number-stretchY'), min:0, max:50},
 }
+let numberOffset
 
 let linesArray = ["hamburgefonstiv"]
 const validLetters = "abcdefghijklmnopqrstuvwxyzäöü,.!?-_ "
@@ -101,8 +105,8 @@ function setup () {
    }
    rectMode(CORNERS)
 
-   values.colorDark.from = color("#090510")
-   values.colorLight.from = color("#C4B6FF")
+   values.hueDark.from = 128
+   values.hueLight.from = 48
 
    writeValuesToURL("noReload")
 }
@@ -229,6 +233,26 @@ function createGUI () {
          writeValuesToURL()
       })
    }
+
+   numberOffset = document.getElementById('number-offset')
+   numberOffset.value = values[(offsetDirection === "h") ? "offsetX" : "offsetY"].from
+   numberOffset.addEventListener('input', () => {
+      values[(offsetDirection === "h") ? "offsetX" : "offsetY"].to = clamp(numberOffset.value, -10, 10)
+      values[(offsetDirection !== "h") ? "offsetX" : "offsetY"].to = 0
+      writeValuesToURL()
+   })
+
+   const offsetToggle = document.getElementById('toggle-offsetDirection')
+   offsetToggle.addEventListener('click', () => {
+      if (offsetDirection === "h") {
+         offsetDirection = "v"
+      } else {
+         offsetDirection = "h"
+      }
+      values.offsetX.to = values.offsetY.from
+      values.offsetY.to = values.offsetX.from
+      writeValuesToURL()
+   })
 }
 
 function loadValuesFromURL () {
@@ -250,10 +274,6 @@ function loadValuesFromURL () {
    if (params.xray === "true" || params.xray === "1") {
       xrayMode = true
       print("Loaded with URL Mode: XRAY")
-   }
-   if (params.center === "true" || params.center === "1") {
-      alignCenter = true
-      print("Loaded with URL Mode: Centered")
    }
    if (params.solid === "false" || params.solid === "0") {
       drawFills = false
@@ -373,9 +393,6 @@ function writeValuesToURL (noReload) {
    if (!drawFills) {
       newParams.append("solid",false)
    }
-   if (alignCenter) {
-      newParams.append("center",true)
-   }
    if (strokeGradient) {
       newParams.append("strokegradient",true)
    }
@@ -406,6 +423,26 @@ function writeValuesToGUI () {
       }
    }
    writeArea.value = linesArray.join("\n")
+
+   let potentialOffsetX; let potentialOffsetY
+   if (values.offsetX.to !== undefined) {
+      potentialOffsetX = values.offsetX.to
+   } else {
+      potentialOffsetX = values.offsetX.from
+   }
+   if (values.offsetY.to !== undefined) {
+      potentialOffsetY = values.offsetY.to
+   } else {
+      potentialOffsetY = values.offsetY.from
+   }
+   if (potentialOffsetX === 0) {
+      numberOffset.value = potentialOffsetY
+      offsetDirection = "v"
+   } else {
+      numberOffset.value = potentialOffsetX
+      offsetDirection = "h"
+   }
+   
 }
 
 function keyTyped() {
@@ -435,15 +472,10 @@ function randomizeValues () {
    values.stretchX.to = 0
    values.stretchY.to = 0
 
-   const offsetType = random(["v", "h", "h", "h", "0", "0", "0", "vh"])
+   const offsetType = random(["v", "h", "h", "h", "0", "0", "0"])
    if (offsetType === "h") {
       values.offsetX.to = floor(random(-2, 2))
    } else if (offsetType === "v") {
-      values.offsetY.to = floor(random(-1, 2))
-   } else if (offsetType === "ha") {
-      values.offsetX.to = floor(random(-1, 2)) * (values.size.to+values.spacing.to)
-   } else if (offsetType === "vh") {
-      values.offsetX.to = floor(random(-1, 2))
       values.offsetY.to = floor(random(-1, 2))
    }
 
@@ -454,8 +486,8 @@ function randomizeValues () {
       values.stretchY.to = floor(random(0, values.size.to*1.5))
    }
 
-   values.colorDark.to = color('hsl('+floor(random(0,360))+', 100%, 06%)')
-   values.colorLight.to = color('hsl('+floor(random(0,360))+', 100%, 90%)')
+   values.hueDark.to = floor(random(0,360))
+   values.hueLight.to = floor(random(0,360))
 
    writeValuesToURL()
    writeValuesToGUI()
@@ -491,14 +523,38 @@ function draw () {
    });
 
    // calculate in between values for everything
-   function lerpValues(slider, mode) {
+   function lerpValues (slider, col) {
+      if (col !== undefined) {
+         let saturation; let lightness;
+         if (col === "dark") {
+            if (darkMode) {
+               saturation = 100
+               lightness = 6
+            } else {
+               saturation = 100
+               lightness = 20
+            }
+         } else if (col === "light") {
+            if (darkMode) {
+               saturation = 100
+               lightness = 90
+            } else {
+               saturation = 100
+               lightness = 99
+            }
+         }
+         const colorFrom = color('hsl('+slider.from+', '+saturation+'%, '+lightness+'%)')
+         const colorTo = color('hsl('+slider.to+', '+saturation+'%, '+lightness+'%)')
+         if (slider.to === undefined) { return colorFrom }
+         return lerpColor(colorFrom, colorTo, slider.lerp/lerpLength)
+      }
+
+      // not a color
       if (slider.to === undefined) {
          return slider.from
+      } else {
+         return map(slider.lerp,0,lerpLength,slider.from, slider.to)
       }
-      if (mode === "color") {
-         return lerpColor(slider.from, slider.to, slider.lerp/lerpLength)
-      }
-      return map(slider.lerp,0,lerpLength,slider.from, slider.to)
    }
 
    typeSize = lerpValues(values.size)
@@ -510,8 +566,8 @@ function draw () {
    typeStretchY = lerpValues(values.stretchY)
    typeWeight = lerpValues(values.weight)
    typeAscenders = lerpValues(values.ascenders)
-   themeDark = lerpValues(values.colorDark, "color")
-   themeLight = lerpValues(values.colorLight, "color")
+   themeDark = lerpValues(values.hueDark, "dark")
+   themeLight = lerpValues(values.hueLight, "light")
 
    const lightColor = (monochromeTheme || xrayMode) ? color("white") : themeLight
    const darkColor = (monochromeTheme || xrayMode) ? color("black") : themeDark
@@ -579,12 +635,8 @@ function drawElements() {
       startOffsetY -= typeOffsetY
    }
 
-   
    push()
    translate(0,0.5*typeSize)
-   if (alignCenter && linesArray.length <= 1) {
-      translate(0,16)
-   }
 
    for (let i = 0; i < linesArray.length; i++) {
       drawStyle(i)
@@ -677,9 +729,6 @@ function drawStyle (lineNum) {
 
    //translate to center if toggled
    push()
-   if (alignCenter) {
-      translate(-6+(width/values.scale.from-totalWidth[lineNum])/2,0)
-   }
    if (typeOffsetX < 0) {
       translate(-typeOffsetX,0)
    }
