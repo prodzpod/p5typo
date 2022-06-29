@@ -105,8 +105,8 @@ function setup () {
    }
    rectMode(CORNERS)
 
-   values.hueDark.from = 128
-   values.hueLight.from = 48
+   values.hueDark.from = 270
+   values.hueLight.from = 340
 
    writeValuesToURL("noReload")
 }
