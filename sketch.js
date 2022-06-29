@@ -2332,13 +2332,13 @@ let currentRangeballsValue = 0;
 function startRangeballs(event, target) {
    currentRangeballsTarget = target;
    currentRangeballsMove = 0;
-   currentRangeballsValue = document.getElementById(target).value;
+   currentRangeballsValue = Number(document.getElementById(target).value;)
 }
 window.onpointermove = function(event) {
    if (!currentRangeballsTarget) return;
    currentRangeballsMove += event.movementX;
    currentRangeballsValue += currentRangeballsMove / 100;
-   document.getElementById(currentRangeballsTarget).value = Math.floor(currentRangeballsValue);
+   document.getElementById(currentRangeballsTarget).value =currentRangeballsValue;
 }
 window.onpointerup = function() {
    currentRangeballsTarget = null;
