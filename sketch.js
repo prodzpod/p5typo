@@ -94,6 +94,7 @@ function setup () {
    createGUI()
 
    cnv = createCanvas(windowWidth-30, windowHeight-200,(webglMode)?WEBGL:(svgMode)?SVG:"")
+   cnv.parent('sketch-holder')
    if (!webglMode) {
       strokeCap(ROUND)
       textFont("Courier Mono")

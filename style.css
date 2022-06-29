@@ -18,7 +18,12 @@ html, body {
 
 canvas {
   display: block;
+}
+
+#sketch-holder {
+  overflow: hidden;
   margin: 15px;
+  display: block;
   border-radius: 0.5em;
 }
 
@@ -41,6 +46,7 @@ canvas {
   display: grid;
   grid-template-columns: max-content max-content;
   grid-gap: 1.5em;
+  margin-right: 1em;
 }
 
 .offset-container {
@@ -245,4 +251,13 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+#info {
+  margin: 1.5em;
+}
+
+#description {
+  column-count: 2;
+  column-gap: 1.5em;
 }
